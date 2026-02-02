@@ -33,6 +33,7 @@
   margin-bottom: 15px;
   background: linear-gradient(to right, #ffffff, #aeb9e1);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
   letter-spacing: -1px;
@@ -46,31 +47,55 @@
   margin: 0 auto;
 }
 
-/* Filters Panel */
+/* Filters & Search Panel */
 .filters {
   display: flex;
-  gap: 20px;
+  gap: 15px;
   margin-bottom: 50px;
   flex-wrap: wrap;
   justify-content: center;
   background: rgba(255, 255, 255, 0.03);
-  padding: 15px;
-  border-radius: 100px;
+  padding: 20px 30px;
+  border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   width: fit-content;
   margin-left: auto;
   margin-right: auto;
+  align-items: center;
 }
 
-.filter-select {
-  padding: 12px 24px;
-  background: transparent;
+.search-wrapper {
+  position: relative;
+  min-width: 250px;
+}
+
+.search-input-field {
+  width: 100%;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50px;
   color: #fff;
   font-size: 0.95rem;
-  min-width: 160px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-input-field:focus {
+  border-color: #764ba2;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 15px rgba(118, 75, 162, 0.2);
+}
+
+.filter-select {
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  color: #fff;
+  font-size: 0.95rem;
+  min-width: 150px;
   cursor: pointer;
   outline: none;
   transition: all 0.3s ease;
@@ -683,4 +708,368 @@
   border-color: #764ba2;
   color: #fff;
   transform: translateY(-2px);
+}
+
+/* === LIST YOUR EVENT PAGE STYLES === */
+
+.list-event-promo {
+  text-align: center;
+  margin-bottom: 60px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.list-event-promo h2 {
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.list-event-promo>p {
+  font-size: 1.1rem;
+  color: #b0c0d0;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.benefit-item {
+  background: rgba(30, 34, 48, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 25px;
+  text-align: left;
+  transition: transform 0.3s ease;
+}
+
+.benefit-item:hover {
+  transform: translateY(-5px);
+  border-color: rgba(118, 75, 162, 0.5);
+}
+
+.benefit-item h3 {
+  color: #fff;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #8faaff;
+}
+
+.benefit-item p {
+  color: #a0b0c0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.create-event-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 40px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+}
+
+.create-event-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6);
+}
+
+/* Pricing Section */
+.pricing-section {
+  text-align: center;
+  margin-top: 80px;
+}
+
+.pricing-section h2 {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 50px;
+}
+
+.pricing-cards {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.pricing-card {
+  background: rgba(22, 27, 46, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 40px 30px;
+  width: 300px;
+  text-align: center;
+  position: relative;
+  transition: transform 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-card:hover {
+  transform: translateY(-10px);
+}
+
+.pricing-card h3 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 15px;
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 25px;
+}
+
+.price span {
+  font-size: 1rem;
+  color: #8892b0;
+  font-weight: 400;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 30px 0;
+  text-align: left;
+  flex-grow: 1;
+}
+
+.features-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #b0c0d0;
+  font-size: 0.95rem;
+}
+
+.features-list li:last-child {
+  border-bottom: none;
+}
+
+.pricing-button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.pricing-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #fff;
+}
+
+/* Featured Card Styling */
+.pricing-card.featured {
+  background: linear-gradient(145deg, rgba(30, 34, 48, 0.9), rgba(118, 75, 162, 0.2));
+  border: 1px solid #764ba2;
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(118, 75, 162, 0.2);
+}
+
+.pricing-card.featured:hover {
+  transform: scale(1.08);
+  /* slightly more lift */
+}
+
+.featured-tag {
+  position: absolute;
+  top: -15px;
+  /* stick out top */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #764ba2;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pricing-card.featured .pricing-button {
+  background: #764ba2;
+  border: none;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+}
+
+.pricing-card.featured .pricing-button:hover {
+  background: #8b5cc4;
+}
+
+/* === GIFT CARDS PAGE STYLES === */
+
+.gift-intro {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto 60px auto;
+  font-size: 1.1rem;
+  color: #b0c0d0;
+  line-height: 1.6;
+}
+
+.gift-cards-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-bottom: 60px;
+}
+
+.gift-card {
+  width: 300px;
+  height: 200px;
+  border-radius: 20px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gift-card:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+
+/* Card Variants */
+.gift-card.purple {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.gift-card.gold {
+  background: linear-gradient(135deg, #f09819 0%, #edde5d 100%);
+  color: #000;
+}
+
+.gift-card.blue {
+  background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
+}
+
+.gift-card h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.gift-card .amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.gift-card .description {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.gift-card button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: inherit;
+  font-weight: 700;
+  padding: 8px 15px;
+  border-radius: 50px;
+  cursor: pointer;
+  width: fit-content;
+  align-self: flex-end;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s;
+}
+
+.gift-card button:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.custom-amount {
+  background: rgba(30, 34, 48, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 600px;
+  margin: 0 auto 60px auto;
+  text-align: center;
+}
+
+.custom-amount-input {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+.custom-amount-input input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  width: 200px;
+  outline: none;
+}
+
+.custom-amount-input button {
+  background: #764ba2;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gift-info {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.gift-info h3 {
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+.gift-info ol {
+  color: #b0c0d0;
+  line-height: 1.8;
+  margin-left: 20px;
+}
+
+.gift-info .note {
+  margin-top: 20px;
+  text-align: center;
+  color: #8faaff;
+  font-size: 0.9rem;
+  font-style: italic;
 }
