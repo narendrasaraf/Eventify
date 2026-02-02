@@ -11,7 +11,7 @@ function Signup() {
     phoneNumber: '',
     agreeTerms: false
   });
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prevData => ({
@@ -19,14 +19,14 @@ function Signup() {
       [name]: type === 'checkbox' ? checked : value
     }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
       return;
     }
-  
+
     try {
       const response = await fetch('http://localhost:5000/signup', {
         method: 'POST',
@@ -35,7 +35,7 @@ function Signup() {
         },
         body: JSON.stringify(formData),
       });
-  
+
       if (response.ok) {
         alert("Account created successfully!");
         setFormData({
@@ -55,14 +55,14 @@ function Signup() {
       alert("Something went wrong. Try again later.");
     }
   };
-  
-  
-  
+
+
+
   return (
     <div className="page-container">
       <div className="auth-container">
         <h2 className="auth-title">Create an Account</h2>
-        
+
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="fullName">Full Name</label>
@@ -77,7 +77,7 @@ function Signup() {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input
@@ -91,7 +91,7 @@ function Signup() {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="phoneNumber">Phone Number</label>
             <input
@@ -105,7 +105,7 @@ function Signup() {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -120,7 +120,7 @@ function Signup() {
               minLength="8"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
@@ -135,7 +135,7 @@ function Signup() {
               minLength="8"
             />
           </div>
-          
+
           <div className="form-group checkbox">
             <input
               type="checkbox"
@@ -146,13 +146,13 @@ function Signup() {
               required
             />
             <label htmlFor="agreeTerms">
-              I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+              I agree to the <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>
             </label>
           </div>
-          
+
           <button type="submit" className="submit-button">Create Account</button>
         </form>
-        
+
         <div className="auth-footer">
           Already have an account? <Link to="/login">Log in</Link>
         </div>

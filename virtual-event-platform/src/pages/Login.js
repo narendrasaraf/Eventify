@@ -16,7 +16,7 @@ function Login() {
 
   React.useEffect(() => {
     if (localStorage.getItem('user')) {
-      navigate('/home');
+      navigate('/dashboard');
     }
   }, [navigate]);
 
@@ -71,10 +71,10 @@ function Login() {
         localStorage.setItem('user', JSON.stringify(data.user));
 
         // Assuming the user object contains a "username" field
-        if (data.user.email === 'admin@123.aiml') {
+        if (data.user.email === 'admin@eventify.in') {
           navigate('/admin');
         } else {
-          navigate('/home');
+          navigate('/dashboard');
         }
       } else {
         alert(`Login failed: ${data.error}`);
@@ -146,6 +146,8 @@ function Login() {
 
         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
           <GoogleLogin
+            theme="filled_black"
+            shape="pill"
             onSuccess={handleGoogleSuccess}
             onError={() => {
               console.log('Login Failed');

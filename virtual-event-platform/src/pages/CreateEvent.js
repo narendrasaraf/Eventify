@@ -7,6 +7,8 @@ function CreateEvent() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [eventMode, setEventMode] = useState('');
   const [posterFile, setPosterFile] = useState(null);
+  const [user] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
+
   const [formData, setFormData] = useState({
     eventName: '',
     description: '',
@@ -18,9 +20,9 @@ function CreateEvent() {
     language: '',
     venueName: '',
     venueAddress: '',
-    organizerName: '',
-    organizerEmail: '',
-    contactNumber: '',
+    organizerName: user.fullName || '',
+    organizerEmail: user.email || '',
+    contactNumber: user.phoneNumber || '',
     ticketType: '',
     attendeeLimit: '',
     registrationDeadline: '',

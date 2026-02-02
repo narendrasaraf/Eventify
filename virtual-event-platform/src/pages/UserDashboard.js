@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './PagesStyles.css'; // Assuming we can reuse some styles or create new ones
+import './PagesStyles.css';
 
 const UserDashboard = () => {
     const [user, setUser] = useState(null);
@@ -19,8 +19,6 @@ const UserDashboard = () => {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setEditForm({ dob: parsedUser.dob || '', password: '' });
-
-        // Fetch Bookings
         fetchBookings(parsedUser._id);
     }, [navigate]);
 
@@ -51,65 +49,81 @@ const UserDashboard = () => {
     if (!user) return <div>Loading...</div>;
 
     return (
-        <div className="dashboard-container" style={{ padding: '20px', color: 'white' }}>
-            <h1>User Dashboard</h1>
+        <div className="dashboard-container">
+            <div className="success-banner">
+                Successfully Logged In
+            </div>
 
-            <div className="profile-section" style={{ marginBottom: '30px', background: '#333', padding: '20px', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2>Profile</h2>
-                    <button onClick={() => setIsEditing(!isEditing)} style={{ padding: '5px 10px', cursor: 'pointer' }}>
-                        {isEditing ? 'Cancel' : 'Edit Profile'}
+            <h1 className="dashboard-title">User Dashboard</h1>
+
+            <div className="profile-section">
+                <div className="profile-header">
+                    <h2>Profile Details</h2>
+                    <button onClick={() => setIsEditing(!isEditing)} className="edit-btn">
+                        {isEditing ? 'Cancel Editing' : 'Edit Profile'}
                     </button>
                 </div>
 
                 {isEditing ? (
-                    <form onSubmit={handleUpdate} style={{ marginTop: '15px' }}>
-                        <p><strong>Name:</strong> {user.fullName} (Read-only)</p>
-                        <p><strong>Email:</strong> {user.email} (Read-only)</p>
-                        <div style={{ margin: '10px 0' }}>
-                            <label>Date of Birth: </label>
+                    <form onSubmit={handleUpdate} className="profile-form">
+                        <div className="form-group">
+                            <label>Name</label>
+                            <input type="text" className="form-control" value={user.fullName} disabled style={{ opacity: 0.7 }} />
+                        </div>
+                        <div className="form-group">
+                            <label>Email</label>
+                            <input type="email" className="form-control" value={user.email} disabled style={{ opacity: 0.7 }} />
+                        </div>
+                        <div className="form-group">
+                            <label>Date of Birth</label>
                             <input
                                 type="date"
+                                className="form-control"
                                 value={editForm.dob}
                                 onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
                             />
                         </div>
-                        <div style={{ margin: '10px 0' }}>
-                            <label>New Password: </label>
+                        <div className="form-group">
+                            <label>New Password (Optional)</label>
                             <input
                                 type="password"
+                                className="form-control"
                                 placeholder="Leave blank to keep current"
                                 value={editForm.password}
                                 onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
                             />
                         </div>
-                        <button type="submit" style={{ padding: '5px 15px', background: '#28a745', color: 'white', border: 'none' }}>Save Changes</button>
+                        <button type="submit" className="save-btn">Save Changes</button>
                     </form>
                 ) : (
-                    <>
+                    <div className="profile-details">
                         <p><strong>Name:</strong> {user.fullName}</p>
                         <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>Phone:</strong> {user.phoneNumber}</p>
+                        <p><strong>Phone:</strong> {user.phoneNumber || 'N/A'}</p>
                         <p><strong>Date of Birth:</strong> {user.dob || 'Not set'}</p>
-                    </>
+                    </div>
                 )}
             </div>
 
             <div className="bookings-section">
                 <h2>My Bookings</h2>
                 {bookings.length === 0 ? (
-                    <p>No bookings yet.</p>
+                    <p style={{ color: '#aaa' }}>You haven't booked any events yet.</p>
                 ) : (
-                    <div className="bookings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                    <div className="bookings-grid">
                         {bookings.map((booking) => (
-                            <div key={booking._id} className="booking-card" style={{ background: '#444', padding: '15px', borderRadius: '10px' }}>
+                            <div key={booking._id} className="booking-card">
+                                <span className="booking-status">{booking.status}</span>
                                 {booking.eventId ? (
                                     <>
                                         <h3>{booking.eventId.eventName}</h3>
-                                        <p><strong>Date:</strong> {booking.eventId.startDate}</p>
-                                        <p><strong>Venue:</strong> {booking.eventId.venueName || 'Online'}</p>
-                                        <p><strong>Status:</strong> {booking.status}</p>
-                                        <p><small>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</small></p>
+                                        <p style={{ color: '#ccc', margin: '5px 0' }}>{booking.eventId.venueName || 'Online Event'}</p>
+                                        <p style={{ color: '#8faaff', fontSize: '0.9rem' }}>
+                                            {new Date(booking.eventId.startDate).toLocaleDateString()}
+                                        </p>
+                                        <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem', color: '#666' }}>
+                                            Booked on {new Date(booking.bookingDate).toLocaleDateString()}
+                                        </div>
                                     </>
                                 ) : (
                                     <p>Event details unavailable</p>

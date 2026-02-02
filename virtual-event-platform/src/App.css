@@ -1,11 +1,13 @@
 .App {
   text-align: center;
-  background-color: #ffffff;
+  /* Background handled by index.css body */
+  background-color: transparent;
   min-height: 100vh;
-  padding: 30px;
+  /* Padding handled by page containers usually, but keep specific if needed */
 }
 
-.header {
-  color: #553BA4;
-  margin-bottom: 30px;
+/* Global Content Wrapper */
+.content {
+  width: 100%;
+  box-sizing: border-box;
 }

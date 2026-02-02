@@ -17,20 +17,12 @@ function EventDetail({ event }) {
   if (!event) return null;
 
   const handleJoinZoom = () => {
-    // Navigate to the meeting route passing the necessary meeting data.
-    navigate("/meeting", {
-      state: {
-        meetingNumber: event.meetingNumber,
-        // Provide your Zoom SDK credentials here (or from event if available)
-        sdkKey: event.sdkKey || "your_sdk_key_here",
-        sdkSecret: event.sdkSecret || "your_sdk_secret_here",
-        role: event.role || 0,
-        userName: "John Doe",
-        userEmail: "john@example.com",
-        password: event.password,
-        leaveUrl: event.leaveUrl || "http://localhost:3000",
-      },
-    });
+    // googleMapLink now stores the Meet URL for Online events
+    if (event.googleMapLink && event.googleMapLink.startsWith('http')) {
+      window.open(event.googleMapLink, '_blank');
+    } else {
+      alert("Meeting link is not available for this event.");
+    }
   };
 
   return (
@@ -75,7 +67,7 @@ function EventDetail({ event }) {
             <br />
             {/* <button className="btn-book">JOIN</button> */}
             <button className="btn-book" onClick={handleJoinZoom}>
-              JOIN ZOOM
+              JOIN GOOGLE MEET
             </button>
           </div>
         </div>

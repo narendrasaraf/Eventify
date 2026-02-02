@@ -11,6 +11,52 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client("294215027727-0pg1fdjv8hen09ikhtf61c5t0tp6mr6p.apps.googleusercontent.com");
+const { google } = require('googleapis');
+
+// Google Calendar Configuration
+const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+const privateKey = process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : '';
+
+const jwtClient = new google.auth.JWT(
+  process.env.GOOGLE_CLIENT_EMAIL,
+  null,
+  privateKey,
+  SCOPES
+);
+
+const calendar = google.calendar({
+  version: 'v3',
+  project: process.env.GOOGLE_PROJECT_NUMBER,
+  auth: jwtClient,
+});
+
+const createGoogleMeet = async (summary, description, startTime, endTime) => {
+  try {
+    const event = {
+      summary: summary,
+      description: description,
+      start: { dateTime: new Date(startTime).toISOString() },
+      end: { dateTime: new Date(endTime).toISOString() },
+      conferenceData: {
+        createRequest: {
+          requestId: `meet-${Date.now()}`,
+          conferenceSolutionKey: { type: 'hangoutsMeet' },
+        },
+      },
+    };
+
+    const result = await calendar.events.insert({
+      calendarId: 'primary',
+      resource: event,
+      conferenceDataVersion: 1,
+    });
+
+    return result.data.hangoutLink;
+  } catch (error) {
+    console.error("Google Meet creation failed:", error);
+    return null;
+  }
+};
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -23,7 +69,7 @@ app.use(express.json()); // Added for consistency
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/userSignupDB', {
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/userSignupDB', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
@@ -188,10 +234,23 @@ app.post('/api/events', upload.single('poster'), async (req, res) => {
 
     const posterPath = req.file ? `/uploads/${req.file.filename}` : null;
 
+    let finalGoogleMapLink = googleMapLink;
+
+    if (mode === 'Online') {
+      console.log("Generating Google Meet link...");
+      const meetLink = await createGoogleMeet(eventName, description, startDate, endDate);
+      if (meetLink) {
+        finalGoogleMapLink = meetLink;
+        console.log("Google Meet Link Generated:", meetLink);
+      }
+    }
+
     const newEvent = new Event({
       eventName, description, type, mode, category, startDate, endDate, language,
       organizerName, organizerEmail, contactNumber, ticketType, attendeeLimit,
-      registrationDeadline, venueName, venueAddress, googleMapLink, paymentMethod,
+      registrationDeadline, venueName, venueAddress,
+      googleMapLink: finalGoogleMapLink,
+      paymentMethod,
       beneficiaryName, accountNumber, bankName, ifsc, upiId, paypalEmail,
       posterPath
     });

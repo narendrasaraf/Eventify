@@ -21,14 +21,14 @@ app.get('/', (req, res) => {
 
 // Email sending route
 app.post('/send-email', async (req, res) => {
-  const { 
-    recipient = "test@example.com", 
-    subject = "Hello from Express!", 
-    body = "This is a test email sent via MailHog." 
+  const {
+    recipient = "test@example.com",
+    subject = "Hello from Express!",
+    body = "This is a test email sent via MailHog."
   } = req.body;
 
   const mailOptions = {
-    from: 'no-reply@eventizer.com',
+    from: 'no-reply@eventify.com',
     to: recipient,
     subject: subject,
     text: body

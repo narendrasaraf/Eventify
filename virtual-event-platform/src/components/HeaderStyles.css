@@ -1,134 +1,185 @@
-/* Header and Navigation Styles */
+/* Header and Navigation Styles - RESTORED & UN-FIXED */
+
 .site-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: #fff;
-    max-width: 1300px;
-    margin: 0 auto;
-  }
-  
-  .logo-container {
-    display: flex;
-    align-items: center;
-  }
-  
-  .logo {
-    width: 70px;
-  }
-  
-  .auth-buttons {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .auth-button {
-    background-color: #553BA4;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 60px 10px 40px;
+  /* Kept the comfortable padding */
+  background: rgba(15, 17, 26, 0.95);
+  backdrop-filter: blur(15px);
+  width: 100%;
+  max-width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+  /* Removed position: fixed/sticky as requested */
+  position: relative;
+}
+
+/* LOGO FIX */
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: 160px;
+  display: block;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* Auth Buttons */
+.auth-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.auth-button {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 8px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.auth-button:hover {
+  background: white;
+  color: #0f111a;
+  border-color: white;
+}
+
+/* Mobile Menu - Hidden primarily */
+.hamburger-menu {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 6px;
+}
+
+.hamburger-line {
+  width: 30px;
+  height: 2px;
+  background-color: white;
+  border-radius: 2px;
+}
+
+/* === Main Navigation Bar (Below Header) === */
+.main-nav {
+  background: transparent;
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 40px;
+  box-sizing: border-box;
+}
+
+.primary-nav,
+.secondary-nav {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 5px;
+}
+
+.primary-nav li a,
+.secondary-nav li a {
+  display: block;
+  padding: 15px 15px;
+  color: #a0a0a0;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.primary-nav li a:hover,
+.secondary-nav li a:hover {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(118, 75, 162, 0.8);
+}
+
+/* Search Bar - Kept in header flow usually, but based on component structure */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50px;
+  padding: 5px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 30px;
+  flex-grow: 1;
+  max-width: 500px;
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 5px;
+  outline: none;
+  font-size: 0.9rem;
+  flex-grow: 1;
+}
+
+.city-select {
+  background: transparent;
+  border: none;
+  color: #ccc;
+  outline: none;
+  margin-left: 15px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  padding-left: 15px;
+}
+
+.city-select option {
+  background-color: #222;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
   .hamburger-menu {
+    display: flex;
+  }
+
+  .auth-buttons,
+  .search-container {
     display: none;
-    flex-direction: column;
-    cursor: pointer;
   }
-  
-  .hamburger-line {
-    width: 25px;
-    height: 3px;
-    background-color: #333;
-    margin: 3px 0;
-  }
-  
-  /* Main Navigation */
-  .main-nav {
-    background-color: #553BA4;
-    max-width: 1300px;
-    margin: 0 auto;
-  }
-  
+
   .nav-container {
-    display: flex;
-    justify-content: space-between;
-    padding: 0 20px;
-  }
-  
-  .primary-nav {
-    display: flex;
-    list-style: none;
-    margin: 0;
+    flex-direction: column;
     padding: 0;
   }
-  
-  .primary-nav li,
-  .secondary-nav li {
-    padding: 15px 20px;
+
+  .primary-nav,
+  .secondary-nav {
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
   }
-  
+
   .primary-nav li a,
   .secondary-nav li a {
-    color: white;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .secondary-nav {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Progress Tracker Styles */
-  .progress-tracker {
-    display: flex;
-    max-width: 1300px;
-    margin: 20px auto;
-    gap: 5px;
-  }
-  
-  .step {
-    flex: 1;
-    padding: 12px;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     text-align: center;
-    border-radius: 5px;
-    font-size: 14px;
-    background-color: #e0d8f7;
-    color: #553BA4;
   }
-  
-  .step.active {
-    background-color: #553BA4;
-    color: white;
-  }
-  
-  /* Responsive styles */
-  @media (max-width: 992px) {
-    .hamburger-menu {
-      display: flex;
-    }
-    
-    .auth-buttons {
-      display: none;
-    }
-    
-    .nav-container {
-      flex-direction: column;
-    }
-    
-    .primary-nav, .secondary-nav {
-      flex-direction: column;
-      width: 100%;
-    }
-    
-    .search-container {
-      max-width: none;
-    }
-  }
+}
