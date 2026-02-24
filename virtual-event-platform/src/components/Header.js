@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './HeaderStyles.css';
 import logo from '../logo.png';
 
 function Header() {
+  const { t, i18n } = useTranslation();
   const [city, setCity] = useState('City');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -11,6 +13,10 @@ function Header() {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
   };
 
   // Completely hide header on Landing Page ('/')
@@ -32,7 +38,7 @@ function Header() {
             <input
               type="text"
               className="search-input"
-              placeholder="Search for Webinars, Conferences and Meetups"
+              placeholder={t('discover_events')}
             />
             <select
               className="city-select"
@@ -44,7 +50,15 @@ function Header() {
               <option value="Mumbai">Mumbai</option>
               <option value="Delhi">Delhi</option>
               <option value="Bangalore">Bangalore</option>
-              <option value="Chennai">Chennai</option>
+            </select>
+
+            <select
+              className="city-select"
+              onChange={(e) => changeLanguage(e.target.value)}
+              value={i18n.language}
+            >
+              <option value="en">English</option>
+              <option value="hi">हिंदी</option>
             </select>
           </div>
         )}
@@ -61,11 +75,12 @@ function Header() {
               <button
                 className="auth-button"
                 onClick={() => {
+                  fetch('http://localhost:5000/logout', { credentials: 'include' });
                   localStorage.removeItem('user');
                   navigate('/login');
                 }}
               >
-                Logout
+                {t('logout')}
               </button>
             </>
           ) : (
@@ -73,7 +88,7 @@ function Header() {
               className="auth-button"
               onClick={() => navigate('/signup')}
             >
-              Sign Up / Login
+              {t('signup')} / {t('login')}
             </button>
           )}
         </div>
@@ -89,15 +104,15 @@ function Header() {
         <nav className="main-nav">
           <div className="nav-container">
             <ul className="primary-nav">
-              <li><Link to="/home">HOME</Link></li>
-              <li><Link to="/webinars">WEBINARS</Link></li>
-              <li><Link to="/conferences">CONFERENCES</Link></li>
-              <li><Link to="/meetups">MEETUPS</Link></li>
+              <li><Link to="/home">{t('home')}</Link></li>
+              <li><Link to="/webinars">{t('webinars')}</Link></li>
+              <li><Link to="/conferences">{t('conferences')}</Link></li>
+              <li><Link to="/meetups">{t('meetups')}</Link></li>
               <li><Link to="/recorded-videos">RECORDED SESSIONS</Link></li>
             </ul>
 
             <ul className="secondary-nav">
-              <li><Link to="/listyourevent">ListYourEvent</Link></li>
+              <li><Link to="/listyourevent">{t('create_event')}</Link></li>
               <li><Link to="/offers">Offers</Link></li>
               <li><Link to="/giftcards">Gift Cards</Link></li>
             </ul>

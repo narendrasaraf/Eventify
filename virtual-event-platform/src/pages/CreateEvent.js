@@ -24,9 +24,11 @@ function CreateEvent() {
     organizerEmail: user.email || '',
     contactNumber: user.phoneNumber || '',
     ticketType: '',
+    ticketPrice: 0,
     attendeeLimit: '',
     registrationDeadline: '',
     googleMapLink: '',
+    meetingPlatform: 'Google',
     paymentMethod: '',
     beneficiaryName: '',
     accountNumber: '',
@@ -69,6 +71,7 @@ function CreateEvent() {
       const response = await fetch('http://localhost:5000/api/events', {
         method: 'POST',
         body: form,
+        credentials: 'include'
       });
 
       const result = await response.json();
@@ -219,10 +222,24 @@ function CreateEvent() {
                   }}
                 >
                   <option value="">Select Mode</option>
-                  <option value="Online">Online (Google Meet)</option>
+                  <option value="Online">Online</option>
                   <option value="Offline">Offline (Physical Venue)</option>
                 </select>
               </div>
+
+              {eventMode === 'Online' && (
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Meeting Platform</label>
+                  <select
+                    name="meetingPlatform"
+                    value={formData.meetingPlatform}
+                    onChange={handleInputChange}
+                  >
+                    <option value="Google">Google Meet</option>
+                    <option value="Jitsi">Jitsi Meet (Free & Unlimited)</option>
+                  </select>
+                </div>
+              )}
 
               {eventMode === 'Offline' && (
                 <>
@@ -265,6 +282,18 @@ function CreateEvent() {
                   <option value="Paid">Paid Ticket</option>
                 </select>
               </div>
+              {formData.ticketType === 'Paid' && (
+                <div className="form-group">
+                  <label>Ticket Price (INR)</label>
+                  <input
+                    name="ticketPrice"
+                    type="number"
+                    placeholder="e.g. 499"
+                    value={formData.ticketPrice}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label>Attendee Limit</label>
                 <input

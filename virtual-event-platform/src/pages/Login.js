@@ -34,6 +34,7 @@ function Login() {
       const response = await fetch('http://localhost:5000/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ token: credentialResponse.credential })
       });
       const data = await response.json();
@@ -55,6 +56,7 @@ function Login() {
       const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
           password: formData.password

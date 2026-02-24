@@ -26,6 +26,8 @@ import AllEvents from './pages/AllEvents';
 // import ZoomMeeting from './pages/ZoomMeeting'; // ✅ Make sure it's imported once
 
 import './App.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import LandingPage from './pages/LandingPage';
 
@@ -62,6 +64,7 @@ function App() {
 
           </Routes>
         </div>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </Router>
   );

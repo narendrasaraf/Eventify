@@ -29,7 +29,7 @@ function Meetups() {
 
   const fetchUserBookings = async (userId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/my-bookings/${userId}`);
+      const response = await axios.get(`http://localhost:5000/api/my-bookings`, { withCredentials: true });
       const bookings = response.data;
       const joinedMap = { ...joinedEvents };
       bookings.forEach(b => {
@@ -160,9 +160,8 @@ function Meetups() {
 
     try {
       const response = await axios.post('http://localhost:5000/api/book', {
-        userId: user._id,
         eventId: id
-      });
+      }, { withCredentials: true });
 
       if (response.status === 201) {
         setJoinedEvents(prev => ({ ...prev, [id]: true }));
@@ -172,7 +171,8 @@ function Meetups() {
       }
     } catch (error) {
       console.error('Registration failed:', error);
-      alert("Registration failed. Please try again.");
+      const msg = error.response?.data?.error || "Registration failed. Please try again.";
+      alert(msg);
     }
   };
 

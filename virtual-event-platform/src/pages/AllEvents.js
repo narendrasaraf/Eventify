@@ -27,9 +27,8 @@ function AllEvents() {
 
     try {
       await axios.post('http://localhost:5000/api/book', {
-        userId: user._id,
         eventId: eventId
-      });
+      }, { withCredentials: true });
       alert('Booking successful!');
       navigate('/dashboard');
     } catch (error) {

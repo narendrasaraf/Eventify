@@ -33,22 +33,18 @@ function Signup() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert("Account created successfully!");
-        setFormData({
-          fullName: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          phoneNumber: '',
-          agreeTerms: false
-        });
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = '/home';
       } else {
-        const err = await response.json();
-        alert(`Signup failed: ${err.error}`);
+        alert(`Signup failed: ${data.error}`);
       }
     } catch (error) {
       console.error("Error submitting form:", error);

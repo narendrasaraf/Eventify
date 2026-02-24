@@ -29,7 +29,7 @@ function Conferences() {
 
   const fetchUserBookings = async (userId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/my-bookings/${userId}`);
+      const response = await axios.get(`http://localhost:5000/api/my-bookings`, { withCredentials: true });
       const bookings = response.data;
       const registeredMap = { ...registeredConferences };
       bookings.forEach(b => {
@@ -163,9 +163,8 @@ function Conferences() {
 
     try {
       const response = await axios.post('http://localhost:5000/api/book', {
-        userId: user._id,
         eventId: id
-      });
+      }, { withCredentials: true });
 
       if (response.status === 201) {
         setRegisteredConferences(prev => ({ ...prev, [id]: true }));
@@ -175,7 +174,8 @@ function Conferences() {
       }
     } catch (error) {
       console.error('Registration failed:', error);
-      alert("Registration failed. Please try again.");
+      const msg = error.response?.data?.error || "Registration failed. Please try again.";
+      alert(msg);
     }
   };
 
