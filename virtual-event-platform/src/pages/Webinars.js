@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './PagesStyles.css';
+import { Search, Filter, RotateCcw, Loader2, ArrowLeft } from 'lucide-react';
 import EventDetail from './EventDetail';
+import EventCard from '../components/EventCard';
+import PageHeader from '../components/PageHeader';
 
 function Webinars() {
   const [webinars, setWebinars] = useState([]);
@@ -19,18 +21,15 @@ function Webinars() {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
-    // Load local storage registered events for UI consistency
     const saved = JSON.parse(localStorage.getItem('registeredWebinars')) || {};
     setRegisteredWebinars(saved);
 
-    // If user is logged in, we could also fetch their bookings from backend
-    // to sync the "Registered" state.
-    if (user && user._id) {
-      fetchUserBookings(user._id);
+    if (user && (user._id || user.id)) {
+      fetchUserBookings();
     }
   }, []);
 
-  const fetchUserBookings = async (userId) => {
+  const fetchUserBookings = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/my-bookings`, { withCredentials: true });
       const bookings = response.data;
@@ -51,7 +50,6 @@ function Webinars() {
           id: 'webinar_1',
           title: "Modern Web Development",
           date: "2025-05-15",
-          time: "10:00 AM - 12:00 PM",
           organizer: "Tech Solutions Inc.",
           category: "Technology",
           price: 0,
@@ -61,7 +59,6 @@ function Webinars() {
           id: 'webinar_2',
           title: "Data Science for Beginners",
           date: "2025-05-20",
-          time: "2:00 PM - 4:00 PM",
           organizer: "DataMinds Academy",
           category: "Education",
           price: 100,
@@ -71,21 +68,10 @@ function Webinars() {
           id: 'webinar_3',
           title: "Digital Marketing Strategies",
           date: "2025-05-25",
-          time: "11:00 AM - 1:00 PM",
           organizer: "Marketing Pro",
           category: "Business",
           price: 0,
           image: "https://img.freepik.com/free-vector/webinar-banner-invitation_52683-50986.jpg"
-        },
-        {
-          id: 'webinar_4',
-          title: "Language Learnings",
-          date: "2025-05-27",
-          time: "11:00 AM - 1:00 PM",
-          organizer: "Languages Pro",
-          category: "Education",
-          price: 0,
-          image: "https://img.freepik.com/free-psd/flat-design-language-learning-facebook-template_23-2150550297.jpg"
         }
       ];
 
@@ -102,37 +88,27 @@ function Webinars() {
   useEffect(() => {
     let filtered = [...webinars];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(w =>
-        w.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.organizer.toLowerCase().includes(searchTerm.toLowerCase())
+        (w.title || w.eventName).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (w.organizer || w.organizerName).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Category filter
     if (filters.category !== 'All Categories') {
       filtered = filtered.filter(w => w.category === filters.category);
     }
 
-    // Date filter
     if (filters.date !== 'All Dates') {
       const today = new Date();
       filtered = filtered.filter(w => {
-        const eventDate = new Date(w.date);
+        const eventDate = new Date(w.date || w.startDate);
         if (filters.date === 'Today') {
           return eventDate.toDateString() === today.toDateString();
         } else if (filters.date === 'Tomorrow') {
           const tomorrow = new Date(today);
           tomorrow.setDate(today.getDate() + 1);
           return eventDate.toDateString() === tomorrow.toDateString();
-        } else if (filters.date === 'This Weekend') {
-          const day = today.getDay();
-          const weekendStart = new Date(today);
-          weekendStart.setDate(today.getDate() + (5 - day));
-          const weekendEnd = new Date(weekendStart);
-          weekendEnd.setDate(weekendStart.getDate() + 2);
-          return eventDate >= weekendStart && eventDate <= weekendEnd;
         } else if (filters.date === 'This Month') {
           return eventDate.getMonth() === today.getMonth() &&
             eventDate.getFullYear() === today.getFullYear();
@@ -141,11 +117,10 @@ function Webinars() {
       });
     }
 
-    // Price filter
     if (filters.price !== 'Price - Any') {
       filtered = filtered.filter(w => {
-        if (filters.price === 'Free') return w.price === 0;
-        if (filters.price === 'Paid') return w.price > 0;
+        if (filters.price === 'Free') return (w.price === 0 || w.ticketType === 'Free');
+        if (filters.price === 'Paid') return (w.price > 0 || w.ticketType === 'Paid');
         return true;
       });
     }
@@ -164,15 +139,14 @@ function Webinars() {
       return;
     }
 
-
     try {
       const response = await axios.post('http://localhost:5000/api/book', {
         eventId: id
       }, { withCredentials: true });
 
       if (response.status === 201) {
-        const updated = { ...registeredWebinars, [id]: true };
-        setRegisteredWebinars(updated);
+        setRegisteredWebinars(prev => ({ ...prev, [id]: true }));
+        const updated = { ...JSON.parse(localStorage.getItem('registeredWebinars') || '{}'), [id]: true };
         localStorage.setItem('registeredWebinars', JSON.stringify(updated));
         alert("Registration Successful!");
       }
@@ -189,118 +163,127 @@ function Webinars() {
     localStorage.setItem('Webinar', JSON.stringify(updated.filter(w => w.createdByUser)));
   };
 
-  const handleImageClick = (webinar) => {
-    if (registeredWebinars[webinar.id || webinar._id]) {
-      setSelectedEvent(webinar);
-    }
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      category: 'All Categories',
+      date: 'All Dates',
+      price: 'Price - Any'
+    });
   };
 
   if (selectedEvent) {
     return (
-      <div className="page-container">
-        <button className="filter-button" onClick={() => setSelectedEvent(null)} style={{ marginBottom: '20px' }}>Back to Webinars</button>
+      <div className="section-container">
+        <button
+          className="btn-secondary mb-8 inline-flex items-center gap-2"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Webinars
+        </button>
         <EventDetail event={selectedEvent} />
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>Webinars</h1>
-        <p>Find and join online webinars on various topics</p>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-2">
+        <PageHeader
+          title="Webinars"
+          subtitle="Join expert-led sessions from the comfort of your home. Learn, interact, and master new skills."
+        />
       </div>
 
-      <div className="filters">
-        <div className="search-wrapper">
+      {/* Filter Bar */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-lg">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
           <input
             type="text"
-            className="search-input-field"
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white"
             placeholder="Search webinars..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <select className="filter-select" name="category" value={filters.category} onChange={handleFilterChange}>
-          <option>All Categories</option>
-          <option>Technology</option>
-          <option>Business</option>
-          <option>Education</option>
-          <option>Health</option>
-        </select>
-
-        <select className="filter-select" name="date" value={filters.date} onChange={handleFilterChange}>
-          <option>All Dates</option>
-          <option>Today</option>
-          <option>Tomorrow</option>
-          <option>This Weekend</option>
-          <option>This Month</option>
-        </select>
-
-        <select className="filter-select" name="price" value={filters.price} onChange={handleFilterChange}>
-          <option>Price - Any</option>
-          <option>Free</option>
-          <option>Paid</option>
-        </select>
-
-        <button className="filter-button" onClick={() => {
-          setSearchTerm('');
-          setFilters({
-            category: 'All Categories',
-            date: 'All Dates',
-            price: 'Price - Any'
-          });
-        }}>Reset</button>
-      </div>
-
-      <div className="events-grid">
-        {loading ? (
-          <div className="loading">Loading webinars...</div>
-        ) : filteredWebinars.length === 0 ? (
-          <div className="no-results" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '50px', color: '#aaa' }}>
-            <h3>No webinars found matching your criteria.</h3>
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-slate-400">
+            <Filter className="h-4 w-4 text-indigo-500" />
+            <select
+              className="bg-transparent text-sm focus:outline-none cursor-pointer"
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
+            >
+              <option className="bg-slate-950">All Categories</option>
+              <option className="bg-slate-950">Technology</option>
+              <option className="bg-slate-950">Business</option>
+              <option className="bg-slate-950">Education</option>
+              <option className="bg-slate-950">Health</option>
+            </select>
           </div>
-        ) : (
-          filteredWebinars.map(webinar => {
-            const webinarId = webinar.id || webinar._id;
-            return (
-              <div className="event-card" key={webinarId}>
-                <div className="event-image">
-                  <img
-                    src={webinar.image || (webinar.posterPath ? `http://localhost:5000${webinar.posterPath}` : '/placeholder.jpg')}
-                    alt={webinar.title || webinar.eventName}
-                    onClick={() => handleImageClick(webinar)}
-                    style={{ cursor: registeredWebinars[webinarId] ? 'pointer' : 'default' }}
-                  />
-                </div>
-                <div className="event-details">
-                  <h3>{webinar.title || webinar.eventName}</h3>
-                  <div className="event-info">
-                    <p><span>Date:</span> {new Date(webinar.date || webinar.startDate).toLocaleDateString()}</p>
-                    <p><span>Time:</span> {webinar.time || (webinar.startDate ? new Date(webinar.startDate).toLocaleTimeString() : 'N/A')}</p>
-                    <p><span>Organizer:</span> {webinar.organizer || webinar.organizerName}</p>
-                    <p><span>Category:</span> {webinar.category}</p>
-                    <p><span>Price:</span> {webinar.price === 0 || webinar.ticketType === 'Free' ? 'Free' : `${webinar.price || 'Paid'} ₹`}</p>
-                  </div>
-                  {registeredWebinars[webinarId] ? (
-                    <div className="register-button done">Registered</div>
-                  ) : (
-                    <button className="register-button" onClick={() => handleRegisterClick(webinarId)}>
-                      Register Now
-                    </button>
-                  )}
-                  {webinar.createdByUser && (
-                    <button className="theme-delete-button" onClick={() => handleDelete(webinarId)} style={{ marginTop: '10px', background: 'rgba(255,0,0,0.1)', color: '#ff4d4d', border: '1px solid rgba(255,0,0,0.2)', padding: '5px', borderRadius: '5px', cursor: 'pointer' }}>
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
+
+          <select
+            className="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-sm focus:outline-none cursor-pointer text-slate-400"
+            name="date"
+            value={filters.date}
+            onChange={handleFilterChange}
+          >
+            <option className="bg-slate-950">All Dates</option>
+            <option className="bg-slate-950">Today</option>
+            <option className="bg-slate-950">Tomorrow</option>
+            <option className="bg-slate-950">This Month</option>
+          </select>
+
+          <select
+            className="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-sm focus:outline-none cursor-pointer text-slate-400"
+            name="price"
+            value={filters.price}
+            onChange={handleFilterChange}
+          >
+            <option className="bg-slate-950">Price - Any</option>
+            <option className="bg-slate-950">Free</option>
+            <option className="bg-slate-950">Paid</option>
+          </select>
+
+          <button
+            onClick={resetFilters}
+            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-slate-400"
+            title="Reset Filters"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
+          <p className="text-slate-400 animate-pulse">Loading webinars...</p>
+        </div>
+      ) : filteredWebinars.length === 0 ? (
+        <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
+          <Search className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-white mb-2">No webinars found</h3>
+          <p className="text-slate-400">Try adjusting your filters or search terms.</p>
+          <button onClick={resetFilters} className="bg-slate-800 text-white px-6 py-2 rounded-lg mt-6">Clear All Filters</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredWebinars.map(webinar => (
+            <EventCard
+              key={webinar.id || webinar._id}
+              event={webinar}
+              isRegistered={registeredWebinars[webinar.id || webinar._id]}
+              onRegister={handleRegisterClick}
+              onClick={setSelectedEvent}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './PagesStyles.css';
+import { Search, Filter, RotateCcw, Loader2, ArrowLeft } from 'lucide-react';
 import EventDetail from './EventDetail';
+import EventCard from '../components/EventCard';
+import PageHeader from '../components/PageHeader';
 
 function Meetups() {
   const [meetups, setMeetups] = useState([]);
@@ -22,12 +24,12 @@ function Meetups() {
     const savedJoined = JSON.parse(localStorage.getItem('joinedMeetups')) || {};
     setJoinedEvents(savedJoined);
 
-    if (user && user._id) {
-      fetchUserBookings(user._id);
+    if (user && (user._id || user.id)) {
+      fetchUserBookings();
     }
   }, []);
 
-  const fetchUserBookings = async (userId) => {
+  const fetchUserBookings = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/my-bookings`, { withCredentials: true });
       const bookings = response.data;
@@ -48,7 +50,6 @@ function Meetups() {
           id: 'meet_1',
           title: "Pune JavaScript Developers",
           date: "2025-04-20",
-          time: "18:00 - 20:00",
           location: "Workspaces Co., Koregaon Park",
           organizer: "Pune JS Community",
           category: "Technology",
@@ -59,7 +60,6 @@ function Meetups() {
           id: 'meet_2',
           title: "Book Lovers Club Meetup",
           date: "2025-04-25",
-          time: "17:00 - 19:00",
           location: "Cafe Reading Room, Aundh",
           organizer: "Pune Readers Circle",
           category: "Books & Literature",
@@ -70,23 +70,11 @@ function Meetups() {
           id: 'meet_3',
           title: "Entrepreneurship Networking",
           date: "2025-05-02",
-          time: "19:00 - 21:00",
           location: "Business Hub, Viman Nagar",
           organizer: "Startup Catalysts",
           category: "Business",
           price: 50,
           image: "https://img.freepik.com/free-vector/flat-design-business-workshop-youtube-thumbnail-template_23-2149393100.jpg"
-        },
-        {
-          id: 'meet_4',
-          title: "Finance Management",
-          date: "2025-05-02",
-          time: "19:00 - 21:00",
-          location: "Business Hub, Viman Nagar",
-          organizer: "Startup Catalysts",
-          category: "Business",
-          price: 100,
-          image: "https://img.freepik.com/free-psd/financial-management-concept_23-2151964759.jpg"
         }
       ];
       setMeetups(dummyMeetups);
@@ -119,13 +107,6 @@ function Meetups() {
           const tomorrow = new Date(today);
           tomorrow.setDate(today.getDate() + 1);
           return eventDate.toDateString() === tomorrow.toDateString();
-        } else if (filters.date === 'This Weekend') {
-          const day = today.getDay();
-          const weekendStart = new Date(today);
-          weekendStart.setDate(today.getDate() + ((6 - day + 7) % 7));
-          const weekendEnd = new Date(weekendStart);
-          weekendEnd.setDate(weekendStart.getDate() + 1);
-          return eventDate >= weekendStart && eventDate <= weekendEnd;
         } else if (filters.date === 'This Month') {
           return (
             eventDate.getMonth() === today.getMonth() &&
@@ -176,131 +157,114 @@ function Meetups() {
     }
   };
 
-  const handleImageClick = (meetup) => {
-    if (joinedEvents[meetup.id || meetup._id]) {
-      setSelectedEvent(meetup);
-    }
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      category: 'All Categories',
+      date: 'All Dates',
+      price: 'Price - Any'
+    });
   };
 
   if (selectedEvent) {
     return (
-      <div className="page-container">
-        <button className="filter-button" onClick={() => setSelectedEvent(null)} style={{ marginBottom: '20px' }}>Back to Meetups</button>
+      <div className="section-container">
+        <button
+          className="btn-secondary mb-8 inline-flex items-center gap-2"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Meetups
+        </button>
         <EventDetail event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>Meetups</h1>
-        <p>Connect with like-minded people at local meetups</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Meetups"
+        subtitle="Connect with like-minded people in your city. Casual gatherings, networking, and fun."
+      />
 
-      <div className="filters">
-        <div className="search-wrapper">
+      {/* Filter Bar */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-lg">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
           <input
             type="text"
-            className="search-input-field"
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white"
             placeholder="Search meetups..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <select
-          className="filter-select"
-          name="category"
-          value={filters.category}
-          onChange={handleFilterChange}
-        >
-          <option>All Categories</option>
-          <option>Technology</option>
-          <option>Books & Literature</option>
-          <option>Business</option>
-        </select>
-
-        <select
-          className="filter-select"
-          name="date"
-          value={filters.date}
-          onChange={handleFilterChange}
-        >
-          <option>All Dates</option>
-          <option>Today</option>
-          <option>Tomorrow</option>
-          <option>This Weekend</option>
-          <option>This Month</option>
-        </select>
-
-        <select
-          className="filter-select"
-          name="price"
-          value={filters.price}
-          onChange={handleFilterChange}
-        >
-          <option>Price - Any</option>
-          <option>Free</option>
-          <option>Paid</option>
-        </select>
-
-        <button className="filter-button" onClick={() => {
-          setSearchTerm('');
-          setFilters({
-            category: 'All Categories',
-            date: 'All Dates',
-            price: 'Price - Any'
-          });
-        }}>Reset</button>
-      </div>
-
-      <div className="events-grid">
-        {loading ? (
-          <div className="loading">Loading meetups...</div>
-        ) : filteredMeetups.length === 0 ? (
-          <div className="no-results" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '50px', color: '#aaa' }}>
-            <h3>No meetups found matching your criteria.</h3>
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-slate-400">
+            <Filter className="h-4 w-4 text-indigo-500" />
+            <select
+              className="bg-transparent text-sm focus:outline-none cursor-pointer"
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
+            >
+              <option className="bg-slate-950">All Categories</option>
+              <option className="bg-slate-950">Networking</option>
+              <option className="bg-slate-950">Social</option>
+              <option className="bg-slate-950">Hobbies</option>
+              <option className="bg-slate-950">Tech</option>
+            </select>
           </div>
-        ) : (
-          filteredMeetups.map(meetup => {
-            const meetId = meetup.id || meetup._id;
-            return (
-              <div className="event-card" key={meetId}>
-                <div className="event-image">
-                  <img
-                    src={meetup.image || (meetup.posterPath ? `http://localhost:5000${meetup.posterPath}` : '/placeholder.jpg')}
-                    alt={meetup.title || meetup.eventName}
-                    onClick={() => handleImageClick(meetup)}
-                    style={{ cursor: joinedEvents[meetId] ? 'pointer' : 'default' }}
-                  />
-                </div>
-                <div className="event-details">
-                  <h3>{meetup.title || meetup.eventName}</h3>
-                  <div className="event-info">
-                    <p><span>Date:</span> {new Date(meetup.date || meetup.startDate).toLocaleDateString()}</p>
-                    <p><span>Time:</span> {meetup.time || (meetup.startDate ? new Date(meetup.startDate).toLocaleTimeString() : 'N/A')}</p>
-                    <p><span>Location:</span> {meetup.location || meetup.venueName || 'Virtual'}</p>
-                    <p><span>Organizer:</span> {meetup.organizer || meetup.organizerName}</p>
-                    <p><span>Category:</span> {meetup.category}</p>
-                    <p><span>Price:</span> {meetup.price === 0 || meetup.ticketType === 'Free' ? 'Free' : `${meetup.price || 'Paid'} ₹`}</p>
-                  </div>
-                  {joinedEvents[meetId] ? (
-                    <div className="register-button done">Registered</div>
-                  ) : (
-                    <button
-                      className="register-button"
-                      onClick={() => handleJoin(meetId)}
-                    >
-                      Register Now
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
+
+          <select
+            className="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-sm focus:outline-none cursor-pointer text-slate-400"
+            name="date"
+            value={filters.date}
+            onChange={handleFilterChange}
+          >
+            <option className="bg-slate-950">All Dates</option>
+            <option className="bg-slate-950">Today</option>
+            <option className="bg-slate-950">Tomorrow</option>
+            <option className="bg-slate-950">This Month</option>
+          </select>
+
+          <button
+            onClick={resetFilters}
+            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-slate-400"
+            title="Reset Filters"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
+          <p className="text-slate-400 animate-pulse">Loading meetups...</p>
+        </div>
+      ) : filteredMeetups.length === 0 ? (
+        <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
+          <Search className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-white mb-2">No meetups found</h3>
+          <p className="text-slate-400">Try adjusting your filters or search terms.</p>
+          <button onClick={resetFilters} className="bg-slate-800 text-white px-6 py-2 rounded-lg mt-6">Clear All Filters</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMeetups.map(meetup => (
+            <EventCard
+              key={meetup.id || meetup._id}
+              event={meetup}
+              isRegistered={joinedEvents[meetup.id || meetup._id]}
+              onRegister={handleJoin}
+              onClick={setSelectedEvent}
+            // onDelete={handleDelete} // This prop was not defined in the original code, removing it.
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

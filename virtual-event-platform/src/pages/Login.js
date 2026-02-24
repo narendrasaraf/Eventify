@@ -1,161 +1,110 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
-import './PagesStyles.css';
-
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Mail, Lock, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 function Login() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false
-  });
-
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (localStorage.getItem('user')) {
-      navigate('/dashboard');
-    }
-  }, [navigate]);
-
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ token: credentialResponse.credential })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/home');
-      } else {
-        alert('Google Login Failed');
-      }
-    } catch (error) {
-      console.error('Google Login Error:', error);
-    }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('Login successful!');
-        console.log('Logged in user:', data.user);
-
-        // Store user in localStorage
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        // Assuming the user object contains a "username" field
-        if (data.user.email === 'admin@eventify.in') {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        alert(`Login failed: ${data.error}`);
+      const res = await axios.post('http://localhost:5000/auth/login', formData, { withCredentials: true });
+      if (res.data.success) {
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        toast.success('Login successful!');
+        navigate('/dashboard');
       }
     } catch (error) {
-      console.error('Error during login:', error);
-      alert('Something went wrong. Please try again.');
+      toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
-
-
+  const googleLogin = () => {
+    window.location.href = 'http://localhost:5000/auth/google';
+  };
 
   return (
-    <div className="page-container">
-      <div className="auth-container">
-        <h2 className="auth-title">Log In to Your Account</h2>
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="card w-full max-w-md p-8 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+          <p className="text-slate-400">Login to manage your events.</p>
+        </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="form-control"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              className="form-control"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-options">
-            <div className="form-group checkbox">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300 ml-1">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
               <input
-                type="checkbox"
-                id="rememberMe"
-                name="rememberMe"
-                checked={formData.rememberMe}
+                type="email"
+                name="email"
+                required
+                value={formData.email}
                 onChange={handleChange}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                placeholder="name@example.com"
               />
-              <label htmlFor="rememberMe">Remember me</label>
             </div>
-
-            <Link to="/forgot-password" className="forgot-password">Forgot Password?</Link>
           </div>
 
-          <button type="submit" className="submit-button">Log In</button>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300 ml-1">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+              <input
+                type="password"
+                name="password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Login"}
+          </button>
         </form>
 
-        <div className="auth-footer">
-          Don't have an account? <Link to="/signup">Sign up</Link>
+        <div className="relative my-8 text-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-800"></div>
+          </div>
+          <span className="relative bg-slate-900 px-4 text-sm text-slate-500">Or continue with</span>
         </div>
 
-        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-          <GoogleLogin
-            theme="filled_black"
-            shape="pill"
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              console.log('Login Failed');
-            }}
-          />
-        </div>
+        <button
+          onClick={googleLogin}
+          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95"
+        >
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pjax/google.png" alt="Google" className="h-5 w-5" />
+          Sign in with Google
+        </button>
+
+        <p className="text-center mt-8 text-slate-400 text-sm">
+          Don't have an account?{' '}
+          <Link to="/signup" className="text-indigo-400 font-bold hover:underline">
+            Signup here
+          </Link>
+        </p>
       </div>
     </div>
   );

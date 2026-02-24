@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Home from './pages/Home';
@@ -22,50 +22,42 @@ import CreateEvent from './pages/CreateEvent';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import AllEvents from './pages/AllEvents';
-// import Meeting from './meeting.js'; // REMOVED
-// import ZoomMeeting from './pages/ZoomMeeting'; // ✅ Make sure it's imported once
 
 import './App.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import LandingPage from './pages/LandingPage';
+import Dashboard from './pages/Dashboard';
 
 function App() {
-
-
-
   return (
     <Router>
-      <div className="App">
-        <Header />
-        <div className="content">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
 
-            {/* Protected Routes */}
-            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/webinars" element={<ProtectedRoute><Webinars /></ProtectedRoute>} />
-            <Route path="/conferences" element={<ProtectedRoute><Conferences /></ProtectedRoute>} />
-            <Route path="/meetups" element={<ProtectedRoute><Meetups /></ProtectedRoute>} />
-            <Route path="/listyourevent" element={<ProtectedRoute><ListYourEvent /></ProtectedRoute>} />
-            <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
-            <Route path="/giftcards" element={<ProtectedRoute><GiftCards /></ProtectedRoute>} />
-            <Route path="/myevents" element={<ProtectedRoute><MyEvents /></ProtectedRoute>} />
-            <Route path="/create-event" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
-            <Route path="/events" element={<ProtectedRoute><AllEvents /></ProtectedRoute>} />
-            <Route path="/recorded-videos" element={<ProtectedRoute><RecordedVideos /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-
-          </Routes>
-        </div>
-        <ToastContainer position="top-right" autoClose={3000} />
-      </div>
+          {/* Protected Routes */}
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/webinars" element={<ProtectedRoute><Webinars /></ProtectedRoute>} />
+          <Route path="/conferences" element={<ProtectedRoute><Conferences /></ProtectedRoute>} />
+          <Route path="/meetups" element={<ProtectedRoute><Meetups /></ProtectedRoute>} />
+          <Route path="/listyourevent" element={<ProtectedRoute><ListYourEvent /></ProtectedRoute>} />
+          <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
+          <Route path="/giftcards" element={<ProtectedRoute><GiftCards /></ProtectedRoute>} />
+          <Route path="/myevents" element={<ProtectedRoute><MyEvents /></ProtectedRoute>} />
+          <Route path="/create-event" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
+          <Route path="/allevents" element={<ProtectedRoute><AllEvents /></ProtectedRoute>} />
+          <Route path="/recorded-videos" element={<ProtectedRoute><RecordedVideos /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        </Routes>
+      </Layout>
+      <ToastContainer position="top-right" autoClose={3000} />
     </Router>
   );
 }

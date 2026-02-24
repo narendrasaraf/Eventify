@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import './PagesStyles.css';
-import Webhook from './Webhook';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  LayoutDashboard,
+  Ticket,
+  Loader2,
+} from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import EventCard from '../components/EventCard';
 
 function MyEvents() {
   const [activeTab, setActiveTab] = useState('registered');
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showWebhook, setShowWebhook] = useState(false);
-  const [webhookEventName, setWebhookEventName] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -22,7 +27,8 @@ function MyEvents() {
           // data is bookings, extract eventId
           setAllEvents(data.map(b => b.eventId).filter(e => e !== null));
         } else {
-          setAllEvents(data);
+          // data is all events, filter for createdByUser on client side
+          setAllEvents(data.filter(event => event.createdByUser));
         }
       } catch (error) {
         console.error('Error fetching events:', error);
@@ -35,144 +41,90 @@ function MyEvents() {
     fetchEvents();
   }, [activeTab]);
 
-  const now = new Date();
+  const tabs = [
+    { id: 'registered', label: 'My Registrations', icon: Ticket },
+    { id: 'created', label: 'My Events', icon: LayoutDashboard }
+  ];
 
-  const registeredEvents = activeTab === 'registered' ? allEvents : [];
-
-  const createdEvents = allEvents.filter(event => event.createdByUser);
-
-  const getImageUrl = (event) => {
-    if (event.posterUrl) return event.posterUrl;
-    if (event.posterPath) {
-      return `http://localhost:5000${event.posterPath.startsWith('/') ? '' : '/'}${event.posterPath}`;
+  const handleDelete = (id) => {
+    // In a real app we would call an API. 
+    // For now we just update state if it's the created tab
+    if (activeTab === 'created') {
+      setAllEvents(prev => prev.filter(e => (e._id || e.id) !== id));
     }
-    if (event.image) {
-      return event.image.startsWith('http') ? event.image : `http://localhost:5000${event.image.startsWith('/') ? '' : '/'}${event.image}`;
-    }
-    return 'https://via.placeholder.com/300x200?text=No+Poster';
   };
 
-  const renderRegisteredEvents = () => (
-    <div className="events-grid">
-      {registeredEvents.map(event => (
-        <div className="event-card" key={event._id}>
-          <div className="event-image">
-            <img src={getImageUrl(event)} alt={event.eventName} />
-          </div>
-          <div className="event-details">
-            <h3>{event.eventName}</h3>
-            <div className="event-info">
-              <p><span>Date:</span> {event.startDate}</p>
-              <p><span>Time:</span> {event.startDate}</p>
-              <p><span>Organizer:</span> {event.organizerName}</p>
-              <p><span>Category:</span> {event.category}</p>
-              <p>
-                <span>Status:</span>
-                <span className="status-badge">Upcoming</span>
-              </p>
-            </div>
-            <div className="event-actions">
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <PageHeader
+          title="Dashboard"
+          subtitle="Manage your journey and track your event experiences in one place."
+          className="mb-0"
+        />
 
-              <button
-                className="register-button"
-                onClick={() => {
-                  setWebhookEventName(event.eventName);
-                  setShowWebhook(true);
-                }}
-              >
-                Send Message to community
-              </button>
-            </div>
-
-            {showWebhook && webhookEventName === event.eventName && (
-              <div className="mt-4">
-                <Webhook />
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderCreatedEvents = () => (
-    <div className="events-grid">
-      {createdEvents.map(event => (
-        <div className="event-card" key={event._id}>
-          <div className="event-image">
-            <img src={getImageUrl(event)} alt={event.eventName} />
-          </div>
-          <div className="event-details">
-            <h3>{event.eventName}</h3>
-            <div className="event-info">
-              <p><span>Date:</span> {event.startDate}</p>
-              <p><span>Time:</span> TBD</p>
-              <p><span>Status:</span> <span className="status-badge">Active</span></p>
-              <p><span>Registrations:</span> N/A</p>
-            </div>
-            <div className="event-actions">
-              <button className="register-button">Manage Event</button>
-              <button className="register-button">View Registrations</button>
-            </div>
-          </div>
-        </div>
-      ))}
-      <div className="create-new">
-        <Link to="/create-event" className="register-button">
-          Create New Event
+        <Link to="/create-event" className="bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 self-start md:self-auto px-6 py-3 rounded-xl font-bold transition-all duration-200 hover:scale-105 shadow-xl shadow-indigo-600/20 active:scale-95">
+          <Plus className="h-5 w-5" /> Create Event
         </Link>
       </div>
-    </div>
-  );
 
-  return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>My Events</h1>
-        <p>Manage your events and registrations</p>
+      {/* Tab Navigation */}
+      <div className="flex gap-1 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-full md:w-fit">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${activeTab === tab.id
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+                }`}
+            >
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="tabs">
-        <div
-          className={`tab ${activeTab === 'registered' ? 'active' : ''}`}
-          onClick={() => setActiveTab('registered')}
-        >
-          Registered Events
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
+          <p className="text-slate-400 animate-pulse">Fetching your events...</p>
         </div>
-        <div
-          className={`tab ${activeTab === 'created' ? 'active' : ''}`}
-          onClick={() => setActiveTab('created')}
-        >
-          Create Events
+      ) : allEvents.length === 0 ? (
+        <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800 flex flex-col items-center">
+          <div className="bg-slate-900 h-20 w-20 rounded-3xl flex items-center justify-center mb-6 border border-slate-800">
+            {activeTab === 'registered' ? <Ticket className="h-10 w-10 text-slate-700" /> : <LayoutDashboard className="h-10 w-10 text-slate-700" />}
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-2">
+            {activeTab === 'registered' ? "No registrations yet" : "No events created"}
+          </h3>
+          <p className="text-slate-400 max-w-md mx-auto mb-8 font-medium">
+            {activeTab === 'registered'
+              ? "Start your journey by discovering amazing webinars, conferences, and meetups happening around you."
+              : "Ready to host? Create your first event and start building your community today."}
+          </p>
+          {activeTab === 'registered' ? (
+            <Link to="/conferences" className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">Browse Events</Link>
+          ) : (
+            <Link to="/create-event" className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">Get Started</Link>
+          )}
         </div>
-      </div>
-
-      <div className="tab-content">
-        {loading ? (
-          <div className="loading">Loading events...</div>
-        ) : (
-          <>
-            {activeTab === 'registered' && registeredEvents.length > 0 && renderRegisteredEvents()}
-            {activeTab === 'created' && createdEvents.length > 0 && renderCreatedEvents()}
-            {((activeTab === 'registered' && registeredEvents.length === 0) ||
-              (activeTab === 'created' && createdEvents.length === 0)) && (
-                <div className="no-events">
-                  <p>Create an Event. ~ Webinar/Conference/Meetups.</p>
-                  {activeTab === 'created' && (
-                    <Link to="/create-event" className="register-button">
-                      Create Event
-                    </Link>
-                  )}
-                  {activeTab === 'registered' && (
-                    <Link to="/" className="register-button">
-                      Browse Events
-                    </Link>
-                  )}
-                </div>
-              )}
-          </>
-        )}
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {allEvents.map(event => (
+            <EventCard
+              key={event._id || event.id}
+              event={event}
+              isRegistered={activeTab === 'registered'}
+              onClick={(ev) => navigate(`/event/${ev._id || ev.id}`)}
+              onDelete={activeTab === 'created' ? handleDelete : null}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
