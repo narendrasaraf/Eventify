@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-06-30T16:10:59.221Z",
+  "scenariosExecuted": 2,
+  "scenariosPassed": 2,
+  "successRatio": 1,
+  "costTrackerSummary": {
+    "cumulativeCostUSD": 0.000021975,
+    "cumulativeTokens": {
+      "input": 53,
+      "output": 60
+    }
+  },
+  "details": [
+    {
+      "scenario": "Event Ingestion Parsing",
+      "passed": true,
+      "durationMs": 1722,
+      "tokens": {
+        "inputTokens": 29,
+        "outputTokens": 29
+      },
+      "costUSD": 0.000010875,
+      "output": "{\"eventName\":\"Advanced React Workshop on July 10th in Pune\",\"ticketPrice\":500,\"attendeeLimit\":80}"
+    },
+    {
+      "scenario": "Attendee FAQ Support Q&A",
+      "passed": true,
+      "durationMs": 3350,
+      "tokens": {
+        "inputTokens": 24,
+        "outputTokens": 31
+      },
+      "costUSD": 0.0000111,
+      "output": "The event has a **strict no-refund cancellation policy**. This means that once a registration or pur..."
+    }
+  ]
+}

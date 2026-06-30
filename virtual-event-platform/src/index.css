@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30 selection:text-white;
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/20 active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-800/80 font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-2;
+  }
+
+  .btn-accent {
+    @apply bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-extrabold py-3 px-8 rounded-xl transition-all duration-300 shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/20 active:scale-95 hover:-translate-y-0.5 flex items-center justify-center gap-2;
+  }
+
+  /* Cards & Panels */
+  .card {
+    @apply bg-slate-900/60 backdrop-blur-md border border-slate-800/60 rounded-2xl p-6 shadow-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-1;
+  }
+
+  .glass-panel {
+    @apply bg-slate-900/40 backdrop-blur-xl border border-slate-800/40 rounded-2xl p-6 shadow-2xl;
+  }
+
+  /* Inputs */
+  .input-field {
+    @apply bg-slate-950/80 border border-slate-800 text-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all placeholder:text-slate-600;
+  }
+
+  /* Layout Containers */
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12;
+  }
+
+  /* Visual Accents & Typography */
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-purple {
+    @apply bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent;
+  }
+}
+
+/* Custom Scrollbar for modern look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Micro-animations */
+@keyframes sparkPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.6)); }
+}
+
+.ai-spark-pulse {
+  animation: sparkPulse 2.5s infinite ease-in-out;
+}

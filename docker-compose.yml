@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  # ── MongoDB ─────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: eventify_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-eventify}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS:-changeme}
+      MONGO_INITDB_DATABASE: eventify
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - eventify_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ──────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eventify_backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-eventify}:${MONGO_ROOT_PASS:-changeme}@mongo:27017/eventify?authSource=admin
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - eventify_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Frontend ─────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./virtual-event-platform
+      dockerfile: Dockerfile
+    container_name: eventify_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - eventify_net
+
+# ─── Volumes ──────────────────────────────────────────────────────
+volumes:
+  mongo_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ─── Networks ─────────────────────────────────────────────────────
+networks:
+  eventify_net:
+    driver: bridge

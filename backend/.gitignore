@@ -1,0 +1,17 @@
+node_modules/
+build/
+.env
+.DS_Store
+npm-debug.log*
+
+# Local file uploads (use Cloudinary in production)
+uploads/*
+!uploads/.gitkeep
+
+# MongoDB data files — NEVER commit these
+../data/db/
+
+# Logs
+logs/
+*.log
+

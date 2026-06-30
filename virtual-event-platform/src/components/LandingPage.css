@@ -1,0 +1,159 @@
+/* .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    position: relative;
+  }
+  
+  .logo {
+    margin-left: 100px;
+    font-size: 2rem;
+    color: #e91e63;
+    font-weight: bold;
+  }
+  
+  .search-bar {
+    width: 40%;
+    
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  
+  .city-select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-left: 10rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+  }
+  
+  .sign-in {
+    background: #e91e63;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    margin-left: 1rem;
+    cursor: pointer;
+  }
+  
+  .hero {
+    background: linear-gradient(90deg, #ff4081, #f50057);
+    padding: 4rem 2rem;
+    color: white;
+    text-align: center;
+  }
+  
+  .hero-text h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hero-text p {
+    font-size: 1.2rem;
+  }
+  
+  .type-nav {
+    display: flex;
+   margin-left: 130px;
+    gap: 1.5rem;
+    background: #fff3f6;
+    padding: 1rem 0;
+  }
+  
+  .type-link {
+    font-size: 1rem;
+    color: #f06292;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .type-link.active {
+    font-weight: bold;
+    color: #e91e63;
+  }
+  
+  .type-link:hover {
+    color: #d81b60;
+  }
+  
+  .event-section {
+    padding: 2rem;
+    background: #fdfdfd;
+  }
+  
+  .event-section h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 2rem;
+  }
+  
+  .event-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  
+  .event-card {
+    width: 300px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .event-card:hover {
+    transform: scale(1.03);
+  }
+  
+  .event-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+  }
+  
+  .event-info {
+    padding: 1rem;
+  }
+  
+  .event-info h3 {
+    margin: 0;
+    color: #222;
+  }
+  
+  .event-info p {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background-color: #f06292;
+    color: white;
+    font-size: 0.75rem;
+    border-radius: 20px;
+  }
+
+  .menu-dots {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .menu-dots span {
+    width: 5px;
+    height: 5px;
+    background-color: #333;
+    border-radius: 50%;
+  } */
