@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Brain, Award, Sparkles } from 'lucide-react';
+import { Calendar, Brain, Award } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
 function About() {

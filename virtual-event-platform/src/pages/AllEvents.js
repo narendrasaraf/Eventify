@@ -13,6 +13,12 @@ export default function AllEvents() {
   const [registered, setRegistered] = useState({});
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
+  
+  // Pagination & Sorting State
+  const [sortBy, setSortBy] = useState('date-asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
   const navigate = useNavigate();
 
   const user = useMemo(() => {
@@ -43,6 +49,11 @@ export default function AllEvents() {
     fetchData();
   }, []); // eslint-disable-line
 
+  // Reset page to 1 when filters or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, category, sortBy]);
+
   const filtered = useMemo(() => {
     let list = events;
     if (search) list = list.filter(e => (e.title || e.eventName || '').toLowerCase().includes(search.toLowerCase()) || (e.description || '').toLowerCase().includes(search.toLowerCase()));
@@ -50,8 +61,57 @@ export default function AllEvents() {
     return list;
   }, [events, search, category]);
 
+  // Apply sorting and pagination
+  const { paginatedList, totalPages, totalItems, actualPage } = useMemo(() => {
+    let list = [...filtered];
+
+    // Apply sorting
+    list.sort((a, b) => {
+      if (sortBy === 'date-asc') {
+        return new Date(a.startDate || a.date) - new Date(b.startDate || b.date);
+      }
+      if (sortBy === 'date-desc') {
+        return new Date(b.startDate || b.date) - new Date(a.startDate || a.date);
+      }
+      if (sortBy === 'price-asc') {
+        return (a.ticketPrice || 0) - (b.ticketPrice || 0);
+      }
+      if (sortBy === 'price-desc') {
+        return (b.ticketPrice || 0) - (a.ticketPrice || 0);
+      }
+      if (sortBy === 'name-asc') {
+        const nameA = (a.eventName || a.title || '').toLowerCase();
+        const nameB = (b.eventName || b.title || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      }
+      return 0;
+    });
+
+    const totalItems = list.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const page = Math.min(currentPage, Math.max(1, totalPages));
+    const startIndex = (page - 1) * itemsPerPage;
+    const paginatedList = list.slice(startIndex, startIndex + itemsPerPage);
+
+    return {
+      paginatedList,
+      totalPages,
+      totalItems,
+      actualPage: page
+    };
+  }, [filtered, sortBy, currentPage]);
+
   const handleRegister = async (id) => {
     if (!user) { toast.warning('Please login to register.'); navigate('/login'); return; }
+    
+    // Redirect to details page for payment if event is paid
+    const targetEvent = events.find(e => (e._id || e.id) === id);
+    if (targetEvent && targetEvent.ticketType === 'Paid' && targetEvent.ticketPrice > 0) {
+      toast.info(`Redirecting to details page to complete payment for "${targetEvent.eventName || targetEvent.title}"...`);
+      navigate(`/event/${id}`);
+      return;
+    }
+
     try {
       await axios.post('http://localhost:5000/api/book', { eventId: id }, { withCredentials: true });
       setRegistered(prev => ({ ...prev, [id]: true }));
@@ -74,20 +134,37 @@ export default function AllEvents() {
         <p className="text-text-2 mt-1.5">Explore every event on Eventify — from local meetups to global summits.</p>
       </div>
 
-      {/* Filters */}
+      {/* Filters & Sorting */}
       <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            className="input pl-10 max-w-md w-full"
-            placeholder="Search events..."
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute left-[calc(100%-2rem)] sm:left-[calc(28rem-2rem)] top-1/2 -translate-y-1/2 text-text-3">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="input pl-10 w-full"
+              placeholder="Search events..."
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-3">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-text-3 uppercase tracking-wider">Sort by</span>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="input py-2 text-sm max-w-xs cursor-pointer bg-slate-950 border-slate-800 text-text-1"
+            >
+              <option value="date-asc" className="bg-slate-900 text-white">Soonest first</option>
+              <option value="date-desc" className="bg-slate-900 text-white">Latest first</option>
+              <option value="price-asc" className="bg-slate-900 text-white">Price: Low to High</option>
+              <option value="price-desc" className="bg-slate-900 text-white">Price: High to Low</option>
+              <option value="name-asc" className="bg-slate-900 text-white">Name: A to Z</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -97,7 +174,9 @@ export default function AllEvents() {
             </button>
           ))}
         </div>
-        <div className="text-xs text-text-3">{filtered.length} event{filtered.length !== 1 ? 's' : ''}</div>
+        <div className="text-xs text-text-3">
+          Showing {paginatedList.length} of {totalItems} event{totalItems !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {/* Grid */}
@@ -105,7 +184,7 @@ export default function AllEvents() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-72" />)}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : paginatedList.length === 0 ? (
         <div className="empty-state card">
           <div className="empty-icon"><CalendarDays className="w-8 h-8" /></div>
           <div>
@@ -124,7 +203,7 @@ export default function AllEvents() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 grid-fade">
-          {filtered.map(ev => (
+          {paginatedList.map(ev => (
             <EventCard
               key={ev._id}
               event={ev}
@@ -133,6 +212,41 @@ export default function AllEvents() {
               onClick={(e) => navigate(`/event/${e._id}`)}
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-8">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={actualPage === 1}
+            className="btn-secondary px-4 py-2 text-sm disabled:opacity-50 disabled:pointer-events-none"
+          >
+            Previous
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+            <button
+              key={pageNum}
+              onClick={() => setCurrentPage(pageNum)}
+              className={`px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${
+                actualPage === pageNum
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={actualPage === totalPages}
+            className="btn-secondary px-4 py-2 text-sm disabled:opacity-50 disabled:pointer-events-none"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

@@ -16,5 +16,6 @@ router.post('/dashboard-insights', protect, controller.dashboardInsights);
 
 // Public / Optional: Prospective attendees (who might not be logged in) can ask questions
 router.post('/support-agent', optionalAuth, controller.supportAgent);
+router.post('/platform-guide', optionalAuth, controller.platformGuide);
 
 module.exports = router;

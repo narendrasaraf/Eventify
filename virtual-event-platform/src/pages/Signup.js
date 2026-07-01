@@ -23,7 +23,7 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/auth/register', formData, { withCredentials: true });
+      const res = await axios.post('http://localhost:5000/auth/signup', formData, { withCredentials: true });
       const u = res.data.user || res.data.data?.user;
       if (res.data.success || res.data.status === 'success') {
         if (u) localStorage.setItem('user', JSON.stringify(u));

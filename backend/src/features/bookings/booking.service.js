@@ -18,6 +18,11 @@ const BookingService = {
       throw new AppError('This event is not available for booking', 400, 'EVENT_UNAVAILABLE');
     }
 
+    // Block direct booking of paid events (they must go through the payment/checkout flow)
+    if (event.ticketType === 'Paid' && event.ticketPrice > 0) {
+      throw new AppError('This is a paid event. Please complete payment to register.', 400, 'PAYMENT_REQUIRED');
+    }
+
     // Duplicate check (also enforced by DB unique index)
     const existing = await BookingRepository.findOne({ userId, eventId });
     if (existing && existing.status !== 'Cancelled') {
@@ -34,6 +39,20 @@ const BookingService = {
 
     const booking = await BookingRepository.create({ userId, eventId });
     logger.info(`Booking created: user ${userId} for event ${eventId} [${booking.ticketNumber}]`);
+
+    // Auto-create notification for booking
+    try {
+      const Notification = require('../../models/Notification');
+      await Notification.create({
+        userId,
+        title: 'Booking Confirmed',
+        body: `Your ticket for "${event.eventName}" has been issued successfully. Access code: ${booking.ticketNumber}.`,
+        type: 'success',
+      });
+    } catch (nErr) {
+      logger.error(`Notification creation failed: ${nErr.message}`);
+    }
+
     return booking;
   },
 

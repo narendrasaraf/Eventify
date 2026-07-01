@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Loader2, MonitorPlay, Filter, X,
-  Calendar, MapPin, Tag, ArrowRight, RotateCcw,
+  Search, MonitorPlay, X, RotateCcw,
 } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { toast } from 'react-toastify';

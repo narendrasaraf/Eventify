@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { User, Phone, Mail, ShieldAlert, Sparkles, Loader2 } from 'lucide-react';
+import { User, Phone, Mail, ShieldAlert, Loader2 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { toast } from 'react-toastify';
 

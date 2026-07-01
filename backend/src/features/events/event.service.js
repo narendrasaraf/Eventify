@@ -66,7 +66,47 @@ const EventService = {
       attendeeLimit: data.attendeeLimit ? Number(data.attendeeLimit) : undefined,
     };
 
-    const event = await EventRepository.create(eventData);
+    let event = await EventRepository.create(eventData);
+
+    const Notification = require('../../models/Notification');
+
+    // Create event notification
+    try {
+      await Notification.create({
+        userId,
+        title: 'Event Created Successfully',
+        body: `Your event "${event.eventName}" is now live on Eventify.`,
+        type: 'success',
+      });
+    } catch (nErr) {
+      logger.error(`Notification failed for event creation: ${nErr.message}`);
+    }
+
+    if ((event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi') {
+      try {
+        const MeetingService = require('../meetings/meeting.service');
+        const meeting = await MeetingService.createMeeting({
+          eventId: event._id,
+          organizerId: userId,
+        });
+        event = await EventRepository.updateById(event._id, { meetingLink: meeting.roomUrl });
+
+        // Create Jitsi ready notification
+        try {
+          await Notification.create({
+            userId,
+            title: 'Virtual Workspace Ready',
+            body: `Jitsi Meet live conference session automatically configured for "${event.eventName}".`,
+            type: 'ai',
+          });
+        } catch (nErr) {
+          logger.error(`Notification failed for Jitsi creation: ${nErr.message}`);
+        }
+      } catch (err) {
+        logger.error(`Failed to auto-create Jitsi meeting on event creation: ${err.message}`);
+      }
+    }
+
     logger.info(`Event created: "${event.eventName}" by user ${userId}`);
     return event;
   },

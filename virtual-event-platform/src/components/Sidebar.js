@@ -17,21 +17,6 @@ import {
   Globe,
 } from 'lucide-react';
 
-// ── NAV STRUCTURE ────────────────────────────────────────
-const PUBLIC_NAV = [
-  { to: '/conferences', label: 'Conferences', icon: MonitorPlay },
-  { to: '/meetups',     label: 'Meetups',     icon: Users },
-];
-
-const PRIVATE_NAV = [
-  { to: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
-  { to: '/discover',    label: 'Events',       icon: CalendarDays },
-  { to: '/conferences', label: 'Conferences', icon: MonitorPlay },
-  { to: '/meetups',     label: 'Meetups',     icon: Users },
-  { to: '/tickets',     label: 'Tickets',     icon: Ticket },
-  { to: '/community',   label: 'Community',   icon: Globe },
-  { to: '/analytics',   label: 'Analytics',   icon: BarChart2 },
-];
 
 
 // ── LOGO ─────────────────────────────────────────────────
