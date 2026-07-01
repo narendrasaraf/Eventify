@@ -139,6 +139,13 @@ function Webinars() {
       return;
     }
 
+    const targetWebinar = webinars.find(w => (w._id || w.id) === id);
+    if (targetWebinar && targetWebinar.ticketType === 'Paid' && targetWebinar.ticketPrice > 0) {
+      alert(`Redirecting to details page to complete payment for "${targetWebinar.eventName || targetWebinar.title}"...`);
+      window.location.href = `/event/${id}`;
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:5000/api/book', {
         eventId: id

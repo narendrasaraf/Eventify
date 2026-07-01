@@ -132,6 +132,20 @@ const verifyPayment = asyncHandler(async (req, res) => {
   });
 
   logger.info(`Paid booking confirmed: user ${req.user.id} event ${eventId} order ${razorpay_order_id}`);
+
+  // Auto-create notification for paid booking
+  try {
+    const Notification = require('../../models/Notification');
+    await Notification.create({
+      userId: req.user.id,
+      title: 'Booking Confirmed',
+      body: `Your ticket for "${event.eventName}" has been issued successfully. Access code: ${booking.ticketNumber || 'TKT-' + razorpay_payment_id.substr(-6).toUpperCase()}.`,
+      type: 'success',
+    });
+  } catch (nErr) {
+    logger.error(`Notification creation failed for paid booking: ${nErr.message}`);
+  }
+
   res.status(200).json({
     status: 'success',
     data: { booking },

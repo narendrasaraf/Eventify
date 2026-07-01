@@ -15,10 +15,57 @@ import {
   Loader2,
   Send,
   X,
-  Sparkles
+  Sparkles,
+  Ticket
 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
+
+const getEventCoverImage = (eventObj) => {
+  if (!eventObj) return "";
+  if (eventObj.posterUrl) {
+    if (eventObj.posterUrl.startsWith('/uploads')) {
+      return `http://localhost:5000${eventObj.posterUrl}`;
+    }
+    return eventObj.posterUrl;
+  }
+  if (eventObj.image && eventObj.image.startsWith('http')) {
+    return eventObj.image;
+  }
+
+  // Automatic fallback based on event category/name
+  const title = (eventObj.eventName || eventObj.title || "").toLowerCase();
+  const category = (eventObj.category || "").toLowerCase();
+
+  if (
+    title.includes('tech') || title.includes('code') || title.includes('develop') || 
+    title.includes('program') || title.includes('software') || title.includes('javascript') || 
+    title.includes('data') || title.includes('ai') || category.includes('tech') || 
+    category.includes('technology')
+  ) {
+    return "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80"; // Tech conference
+  }
+  if (title.includes('design') || title.includes('ux') || title.includes('ui') || title.includes('art') || category.includes('design')) {
+    return "https://images.unsplash.com/photo-1561070791-26c113006238?auto=format&fit=crop&w=1200&q=80"; // Design
+  }
+  if (title.includes('health') || title.includes('medical') || title.includes('doctor') || category.includes('health') || category.includes('medical')) {
+    return "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80"; // Healthcare
+  }
+  if (title.includes('finance') || title.includes('money') || title.includes('market') || title.includes('bank') || category.includes('finance') || category.includes('business')) {
+    return "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80"; // Finance
+  }
+  if (title.includes('educat') || title.includes('learn') || title.includes('study') || title.includes('book') || category.includes('education')) {
+    return "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80"; // Education
+  }
+  if (title.includes('music') || title.includes('concert') || title.includes('show') || title.includes('party') || category.includes('music') || category.includes('entertainment')) {
+    return "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80"; // Music
+  }
+  if (title.includes('green') || title.includes('energy') || title.includes('eco') || title.includes('environ') || category.includes('environ')) {
+    return "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1200&q=80"; // Environment
+  }
+
+  return "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80"; // Default
+};
 
 function EventDetail({ event: propEvent }) {
   const navigate = useNavigate();
@@ -27,6 +74,97 @@ function EventDetail({ event: propEvent }) {
   const [event, setEvent] = useState(propEvent || null);
   const [loadingEvent, setLoadingEvent] = useState(!propEvent);
   const [loading, setLoading] = useState(false);
+  const [meeting, setMeeting] = useState(null);
+  const [activeMeeting, setActiveMeeting] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const user = React.useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  }, []);
+
+  // Check if current user is already registered for this event
+  useEffect(() => {
+    if (event && user) {
+      const checkBooking = async () => {
+        try {
+          const res = await axios.get('http://localhost:5000/api/v1/bookings', { withCredentials: true });
+          const bookings = Array.isArray(res.data) ? res.data : res.data.data?.bookings || [];
+          const isBooked = bookings.some(b => b.eventId && (b.eventId._id || b.eventId.id) === event._id);
+          setIsRegistered(isBooked);
+        } catch (err) {
+          console.error("Failed to fetch user bookings list:", err);
+        }
+      };
+      checkBooking();
+    }
+  }, [event, user]);
+
+  // Load Jitsi external API script dynamically
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://meet.jit.si/external_api.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Fetch meeting details if Jitsi configurations exist
+  useEffect(() => {
+    if (event && (event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi' && user) {
+      const fetchMeeting = async () => {
+        try {
+          const res = await axios.get(`http://localhost:5000/api/v1/meetings/event/${event._id}`, { withCredentials: true });
+          if (res.data && res.data.data?.meeting) {
+            setMeeting(res.data.data.meeting);
+          }
+        } catch (err) {
+          console.warn("Meeting credentials restricted or unavailable:", err.response?.data?.message);
+        }
+      };
+      fetchMeeting();
+    }
+  }, [event, user, isRegistered]);
+
+  // Handle Jitsi iframe API lifecycle
+  useEffect(() => {
+    let api = null;
+    if (activeMeeting && meeting && window.JitsiMeetExternalAPI) {
+      const domain = 'meet.jit.si';
+      const options = {
+        roomName: meeting.roomName,
+        width: '100%',
+        height: '100%',
+        parentNode: document.querySelector('#jitsi-container'),
+        userInfo: {
+          displayName: user?.name || 'Attendee',
+          email: user?.email || '',
+        },
+        interfaceConfigOverwrite: {
+          TOOLBAR_BUTTONS: [
+            'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+            'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+            'settings', 'raisehand', 'videoquality', 'filmstrip', 'tileview'
+          ],
+        },
+      };
+
+      api = new window.JitsiMeetExternalAPI(domain, options);
+
+      api.addEventListener('readyToClose', () => {
+        setActiveMeeting(false);
+      });
+
+      if (meeting.password) {
+        api.addEventListener('videoConferenceJoined', () => {
+          api.executeCommand('password', meeting.password);
+        });
+      }
+    }
+    return () => {
+      if (api) api.dispose();
+    };
+  }, [activeMeeting, meeting, user]);
 
   useEffect(() => {
     if (!propEvent && id) {
@@ -104,6 +242,7 @@ function EventDetail({ event: propEvent }) {
         const res = await axios.post('http://localhost:5000/api/book', { eventId: event._id }, { withCredentials: true });
         if (res.status === 201) {
           toast.success("Successfully registered for the event!");
+          setIsRegistered(true);
           navigate('/tickets');
         }
       } catch (err) {
@@ -122,22 +261,32 @@ function EventDetail({ event: propEvent }) {
       // Dev Sandbox checkout bypass if it is mock order
       if (orderRes.data.id && orderRes.data.id.startsWith('order_mock_')) {
         setLoading(false);
-        if (window.confirm(`[Eventify Checkout Sandbox]\n\nSimulating payment order: ${orderRes.data.id}\nAmount: ₹${event.ticketPrice}\n\nClick OK to simulate successful payment, or Cancel to simulate cancellation.`)) {
-          const mockPaymentId = `pay_mock_${Date.now()}`;
-          const mockSignature = `sig_mock_${Date.now()}`;
-          const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
-            razorpay_order_id: orderRes.data.id,
-            razorpay_payment_id: mockPaymentId,
-            razorpay_signature: mockSignature,
-            eventId: event._id
-          }, { withCredentials: true });
-
-          if (verifyRes.status === 200) {
-            toast.success("Sandbox: Payment Successful! Event Booked.");
-            navigate('/tickets');
-          }
-        } else {
+        const upiId = window.prompt(
+          `[Eventify Checkout Sandbox - UPI Simulation]\n\nEnter your mock UPI ID (e.g. success@razorpay to simulate success, or fail@razorpay to simulate failure):`,
+          "success@razorpay"
+        );
+        if (upiId === null) {
           toast.error("Sandbox: Payment cancelled by user.");
+          return;
+        }
+        if (upiId.toLowerCase().includes("fail")) {
+          toast.error("Sandbox: UPI transaction simulation failed.");
+          return;
+        }
+
+        const mockPaymentId = `pay_mock_${Date.now()}`;
+        const mockSignature = `sig_mock_${Date.now()}`;
+        const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
+          razorpay_order_id: orderRes.data.id,
+          razorpay_payment_id: mockPaymentId,
+          razorpay_signature: mockSignature,
+          eventId: event._id
+        }, { withCredentials: true });
+
+        if (verifyRes.status === 200) {
+          toast.success("Sandbox: UPI Payment Successful! Event Booked.");
+          setIsRegistered(true);
+          navigate('/tickets');
         }
         return;
       }
@@ -160,15 +309,38 @@ function EventDetail({ event: propEvent }) {
 
             if (verifyRes.status === 200) {
               toast.success("Payment Successful! Event Booked.");
+              setIsRegistered(true);
               navigate('/tickets');
             }
           } catch (err) {
-            toast.error("Payment verification failed.");
+            console.error("Payment verification failed details:", err.response?.data || err);
+            toast.error(err.response?.data?.message || "Payment verification failed.");
           }
         },
         prefill: {
-          name: "User Name",
-          email: "user@example.com"
+          name: user?.name || "User Name",
+          email: user?.email || "user@example.com",
+          contact: user?.phoneNumber || "",
+          method: "upi",
+          vpa: "success@razorpay"
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [
+                  {
+                    method: "upi"
+                  }
+                ]
+              }
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
         },
         theme: {
           color: "#4F46E5"
@@ -182,7 +354,8 @@ function EventDetail({ event: propEvent }) {
         toast.error("Payment gateway not loaded.");
       }
     } catch (err) {
-      toast.error("Failed to initiate payment. Please login.");
+      console.error("Payment initiation failed details:", err.response?.data || err);
+      toast.error(err.response?.data?.message || "Failed to initiate payment.");
     } finally {
       setLoading(false);
     }
@@ -239,7 +412,7 @@ function EventDetail({ event: propEvent }) {
         <div className="lg:col-span-2 space-y-8">
           <div className="relative group rounded-3xl overflow-hidden shadow-2xl shadow-indigo-500/10 border border-slate-800">
             <img
-              src={event.posterUrl ? (event.posterUrl.startsWith('/uploads') ? `http://localhost:5000${event.posterUrl}` : event.posterUrl) : event.image}
+              src={getEventCoverImage(event)}
               alt={event.eventName}
               className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-700"
             />
@@ -352,6 +525,53 @@ function EventDetail({ event: propEvent }) {
               </div>
             </div>
 
+            {/* Virtual Workspace (Jitsi Meet) */}
+            {(event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi' && (
+              <div className="border-t border-slate-800 pt-6">
+                {meeting ? (
+                  <div className="space-y-4">
+                    <h5 className="font-bold text-xs text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                      <Video className="w-4 h-4 text-emerald-400" /> Virtual Workspace
+                    </h5>
+                    <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400">Platform</span>
+                        <span className="font-bold text-white">Jitsi Meet</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400">Status</span>
+                        <span className="badge badge-success">Active</span>
+                      </div>
+                      {meeting.password && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-400">Room Password</span>
+                          <span className="font-mono text-indigo-300 font-bold">{meeting.password}</span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setActiveMeeting(true)}
+                      className="w-full bg-emerald-650 hover:bg-emerald-550 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-emerald-600/20 text-xs"
+                    >
+                      <Video className="h-4 w-4" /> Launch Jitsi Session
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <h5 className="font-bold text-xs text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                      <Video className="w-4 h-4 text-slate-500" /> Virtual Workspace
+                    </h5>
+                    <div className="p-4 bg-slate-950/40 rounded-xl border border-slate-800 flex flex-col items-center justify-center py-6 text-center animate-pulse">
+                      <Video className="w-6 h-6 text-slate-600 mb-2" />
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-semibold">
+                        Virtual meeting credentials are restricted to registered attendees.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="border-t border-slate-800 pt-8 space-y-6">
               <div className="text-center">
                 <p className="text-text-secondary text-sm mb-1 uppercase tracking-tighter">Ticket Price</p>
@@ -361,19 +581,37 @@ function EventDetail({ event: propEvent }) {
               </div>
 
               <div className="space-y-3">
-                <button
-                  className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                  onClick={handlePayment}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
-                  ) : (
-                    event.ticketType === 'Free' ? 'Join Now' : 'Pay & Book Ticket'
-                  )}
-                </button>
+                {isRegistered ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl text-center space-y-2">
+                      <BadgeCheck className="h-10 w-10 text-emerald-400 mx-auto animate-bounce mt-2" />
+                      <h5 className="font-extrabold text-white text-base">You're Registered!</h5>
+                      <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                        Your admission pass is secured. You can view or download your ticket in your Tickets Wallet.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/tickets')}
+                      className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+                    >
+                      <Ticket className="h-5 w-5" /> Go to Tickets Wallet
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                    onClick={handlePayment}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
+                    ) : (
+                      event.ticketType === 'Free' ? 'Join Now' : 'Pay & Book Ticket'
+                    )}
+                  </button>
+                )}
 
-                {event.meetingLink && (
+                {event.meetingLink && (isRegistered || (user && event && ((event.createdBy?._id || event.createdBy) === user._id || (event.createdBy?._id || event.createdBy) === user.id))) && (
                   <button
                     className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
                     onClick={handleJoinMeet}
@@ -477,6 +715,32 @@ function EventDetail({ event: propEvent }) {
           <span>AI Host Q&A</span>
         </button>
       </div>
+
+      {/* Jitsi Meeting Overlay Modal */}
+      {activeMeeting && meeting && (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
+          <div className="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Video className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white">{event.eventName}</h4>
+                <p className="text-[10px] text-slate-400 font-medium">Jitsi Meeting Live Session</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveMeeting(false)}
+              className="btn-ghost btn-sm text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" /> Close Meeting
+            </button>
+          </div>
+          <div className="flex-1 w-full relative" id="jitsi-container">
+            {/* Jitsi Iframe mounts here */}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

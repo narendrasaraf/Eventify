@@ -483,33 +483,44 @@ function CreateEvent() {
                     <div className="grid grid-cols-1 gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-text-secondary mb-2">Event Mode</label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                           <button
                             type="button"
                             onClick={() => { setEventMode('Online'); handleInputChange({ target: { name: 'mode', value: 'Online' } }); }}
-                            className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all ${eventMode === 'Online'
+                            className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${eventMode === 'Online'
                                 ? 'bg-primary/10 border-primary text-primary'
                                 : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
                               }`}
                           >
-                            <Video className="h-8 w-8 mb-3" />
-                            <span className="font-bold">Online / Virtual</span>
+                            <Video className="h-6 w-6 mb-2" />
+                            <span className="font-bold text-xs">Online</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => { setEventMode('Offline'); handleInputChange({ target: { name: 'mode', value: 'Offline' } }); }}
-                            className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all ${eventMode === 'Offline'
+                            className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${eventMode === 'Offline'
                                 ? 'bg-primary/10 border-primary text-primary'
                                 : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
                               }`}
                           >
-                            <MapPin className="h-8 w-8 mb-3" />
-                            <span className="font-bold">Offline / Venue</span>
+                            <MapPin className="h-6 w-6 mb-2" />
+                            <span className="font-bold text-xs">Offline</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setEventMode('Hybrid'); handleInputChange({ target: { name: 'mode', value: 'Hybrid' } }); }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${eventMode === 'Hybrid'
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
+                              }`}
+                          >
+                            <Globe className="h-6 w-6 mb-2" />
+                            <span className="font-bold text-xs">Hybrid</span>
                           </button>
                         </div>
                       </div>
-
-                      {eventMode === 'Online' && (
+ 
+                      {(eventMode === 'Online' || eventMode === 'Hybrid') && (
                         <div className="animate-in zoom-in-95 duration-300">
                           <label className="block text-sm font-semibold text-text-secondary mb-2">Meeting Platform</label>
                           <select
@@ -519,12 +530,12 @@ function CreateEvent() {
                             onChange={handleInputChange}
                           >
                             <option value="Google Meet" className="bg-slate-900">Google Meet</option>
-                            <option value="Jitsi" className="bg-slate-900">Jitsi Meet (Free & Unlimited)</option>
+                            <option value="Jitsi" className="bg-slate-900">Jitsi Meet (Auto Setup Room)</option>
                           </select>
                         </div>
                       )}
-
-                      {eventMode === 'Offline' && (
+ 
+                      {(eventMode === 'Offline' || eventMode === 'Hybrid') && (
                         <div className="space-y-6 animate-in zoom-in-95 duration-300">
                           <div>
                             <label className="block text-sm font-semibold text-text-secondary mb-2">Venue Name</label>

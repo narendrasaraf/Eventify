@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -1083,14 +1084,11 @@ export default function LandingPage() {
     <div className="bg-canvas text-text-1 overflow-x-hidden">
       <TopNav user={user} />
       <Hero />
-      <LogoStrip />
-      <Stats />
       <ConferencesSection />
       <MeetupsSection />
       <AISection />
       <DashboardPreview />
       <Testimonials />
-      <Pricing />
       <FAQ />
       <CTABand />
       <Footer />

@@ -102,13 +102,13 @@
   }
 
   /* ── INPUT ──────────────────────────────────────── */
-  .input {
-    @apply w-full bg-surface-2 border border-border rounded-xl px-4 py-2.5 text-text-1 text-sm;
-    @apply placeholder:text-text-3 outline-none transition-all duration-200;
+  .input, .input-field {
+    @apply w-full bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-2.5 text-text-1 text-sm;
+    @apply placeholder:text-slate-600 outline-none transition-all duration-200;
     @apply focus:ring-2 focus:ring-brand/30 focus:border-brand/50;
   }
   .input-lg {
-    @apply input px-5 py-3.5 text-base rounded-2xl;
+    @apply px-5 py-3.5 text-base rounded-2xl;
   }
 
   /* ── LABEL ──────────────────────────────────────── */
