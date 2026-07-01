@@ -104,7 +104,7 @@ function EventDetail({ event: propEvent }) {
         const res = await axios.post('http://localhost:5000/api/book', { eventId: event._id }, { withCredentials: true });
         if (res.status === 201) {
           toast.success("Successfully registered for the event!");
-          navigate('/myevents');
+          navigate('/tickets');
         }
       } catch (err) {
         toast.error("Failed to register. Please login first.");
@@ -118,6 +118,29 @@ function EventDetail({ event: propEvent }) {
       const orderRes = await axios.post('http://localhost:5000/api/payment/create-order', {
         amount: event.ticketPrice
       }, { withCredentials: true });
+
+      // Dev Sandbox checkout bypass if it is mock order
+      if (orderRes.data.id && orderRes.data.id.startsWith('order_mock_')) {
+        setLoading(false);
+        if (window.confirm(`[Eventify Checkout Sandbox]\n\nSimulating payment order: ${orderRes.data.id}\nAmount: ₹${event.ticketPrice}\n\nClick OK to simulate successful payment, or Cancel to simulate cancellation.`)) {
+          const mockPaymentId = `pay_mock_${Date.now()}`;
+          const mockSignature = `sig_mock_${Date.now()}`;
+          const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
+            razorpay_order_id: orderRes.data.id,
+            razorpay_payment_id: mockPaymentId,
+            razorpay_signature: mockSignature,
+            eventId: event._id
+          }, { withCredentials: true });
+
+          if (verifyRes.status === 200) {
+            toast.success("Sandbox: Payment Successful! Event Booked.");
+            navigate('/tickets');
+          }
+        } else {
+          toast.error("Sandbox: Payment cancelled by user.");
+        }
+        return;
+      }
 
       const options = {
         key: "rzp_test_placeholder",
@@ -137,7 +160,7 @@ function EventDetail({ event: propEvent }) {
 
             if (verifyRes.status === 200) {
               toast.success("Payment Successful! Event Booked.");
-              navigate('/myevents');
+              navigate('/tickets');
             }
           } catch (err) {
             toast.error("Payment verification failed.");

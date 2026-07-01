@@ -54,8 +54,10 @@ const createEvent = asyncHandler(async (req, res) => {
     return res.status(422).json({ status: 'fail', errors: errors.array() });
   }
 
-  // posterUrl will be set by upload middleware if Cloudinary is configured
-  const posterUrl = req.file ? req.file.path || req.file.location || '' : '';
+  // posterUrl will be set by upload middleware. Convert local filesystem path to public relative URL.
+  const posterUrl = req.file 
+    ? (req.file.filename ? `/uploads/${req.file.filename}` : req.file.path || req.file.location || '') 
+    : '';
   const posterPublicId = req.file ? req.file.filename || '' : '';
 
   const event = await EventService.createEvent(

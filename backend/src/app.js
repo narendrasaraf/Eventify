@@ -20,6 +20,7 @@ const eventRoutes   = require('./features/events/event.routes');
 const bookingRoutes = require('./features/bookings/booking.routes');
 const userRoutes    = require('./features/users/user.routes');
 const intelligenceRoutes = require('./features/intelligence/intelligence.routes');
+const paymentRoutes = require('./features/payments/payment.routes');
 
 // ─── Passport Strategy Config ────────────────────────────────────────────────
 const configurePassport = require('./config/passport');
@@ -97,6 +98,7 @@ app.use('/api/v1/events',       eventRoutes);
 app.use('/api/v1/bookings',     bookingRoutes);
 app.use('/api/v1/users',        userRoutes);
 app.use('/api/v1/intelligence', intelligenceRoutes);
+app.use('/api/v1/payments',     paymentRoutes);
 
 // ─── Legacy Route Aliases (backward compat for existing frontend) ─────────────
 // These aliases allow the existing frontend to keep working without code changes.
@@ -106,6 +108,7 @@ app.use('/api/events',   eventRoutes);         // old: /api/events
 app.use('/api/book',     bookingRoutes);       // old: /api/book
 app.use('/api/my-bookings', bookingRoutes);    // old: /api/my-bookings
 app.use('/api/users',    userRoutes);          // old: /api/users/me
+app.use('/api/payment',  paymentRoutes);       // old: /api/payment/create-order
 
 // ─── 404 + Error Handlers (MUST be last) ─────────────────────────────────────
 app.use(notFound);

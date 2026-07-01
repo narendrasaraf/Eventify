@@ -101,7 +101,7 @@ const setRefreshTokenCookie = (res, token) => {
     httpOnly: true,
     secure: config.isProd,
     sameSite: config.isProd ? 'strict' : 'lax',
-    path: '/api/v1/auth/refresh',  // Scoped — only sent on refresh endpoint
+    path: '/',  // Widened scope for general refresh compat
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
@@ -112,7 +112,7 @@ const setRefreshTokenCookie = (res, token) => {
  */
 const clearAuthCookies = (res) => {
   res.clearCookie('token');
-  res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
+  res.clearCookie('refreshToken', { path: '/' });
 };
 
 module.exports = {
