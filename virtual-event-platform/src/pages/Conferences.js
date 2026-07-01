@@ -132,6 +132,16 @@ export default function Conferences() {
 
   const handleRegister = async (id) => {
     if (!user) { toast.warning('Please login to register.'); navigate('/login'); return; }
+    
+    // Simulate booking for fallback mock events locally
+    if (typeof id === 'string' && id.startsWith('conf_')) {
+      const next = { ...registered, [id]: true };
+      setRegistered(next);
+      localStorage.setItem('registeredConferences', JSON.stringify(next));
+      toast.success('Sandbox: Registered for demo conference!');
+      return;
+    }
+
     try {
       await axios.post('http://localhost:5000/api/v1/bookings', { eventId: id }, { withCredentials: true });
       const next = { ...registered, [id]: true };

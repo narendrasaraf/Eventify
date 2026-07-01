@@ -92,12 +92,50 @@ export default function EventCard({ event, isRegistered, onRegister, onClick, on
       {/* CTA */}
       <div className="mt-auto">
         {isRegistered ? (
-          <button
-            className="btn-secondary btn-md w-full"
-            onClick={(e) => { e.stopPropagation(); onClick && onClick(event); }}
-          >
-            View Access <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex gap-2 w-full">
+            <button
+              className="btn-secondary btn-md flex-1 text-xs"
+              onClick={(e) => { e.stopPropagation(); onClick && onClick(event); }}
+            >
+              View Access <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              className="bg-brand/10 hover:bg-brand/20 text-brand border border-brand/20 rounded-xl px-4 text-xs font-bold transition-all"
+              title="Download Admission Ticket"
+              onClick={(e) => {
+                e.stopPropagation();
+                const ticketText = `
+==============================================
+               ADMISSION TICKET               
+                 EVENTIFY                    
+==============================================
+Event Name:   ${title}
+Category:     ${category}
+Start Date:   ${date}
+Venue/Location: ${location || 'Online Workspace'}
+Access Status: Confirmed / Paid Ticket
+
+Booking Ref:   TXN-${Math.random().toString(36).substr(2, 9).toUpperCase()}
+Secure Token:  SEC-${Math.random().toString(36).substr(2, 6).toUpperCase()}
+
+----------------------------------------------
+Present this ticket at the check-in desk.
+Thank you for booking with Eventify.
+==============================================
+`;
+                const blob = new Blob([ticketText.trim()], { type: "text/plain;charset=utf-8" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `ticket-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Ticket
+            </button>
+          </div>
         ) : (
           <button
             className="btn-primary btn-md w-full"

@@ -143,7 +143,7 @@ function EventDetail({ event: propEvent }) {
       }
 
       const options = {
-        key: "rzp_test_placeholder",
+        key: orderRes.data.key || "rzp_test_placeholder",
         amount: orderRes.data.amount,
         currency: orderRes.data.currency,
         name: "Eventify",

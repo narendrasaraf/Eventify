@@ -97,24 +97,16 @@ export default function Sidebar({ user, onLogout }) {
   const content = (
     <nav className="flex flex-col h-full py-4 gap-0.5">
       {/* Logo + toggle */}
-      <div className={`flex items-center mb-6 px-3 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      {/* Logo + toggle */}
+      <div className={`flex items-center mb-6 px-3 ${collapsed ? 'flex-col gap-3 justify-center' : 'justify-between'}`}>
         <Logo collapsed={collapsed} />
-        {!collapsed && (
-          <button
-            onClick={() => setCollapsed(true)}
-            className="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg text-text-3 hover:text-text-2 hover:bg-surface-2 transition-all"
-          >
-            <Menu className="w-4 h-4" />
-          </button>
-        )}
-        {collapsed && (
-          <button
-            onClick={() => setCollapsed(false)}
-            className="hidden lg:flex absolute bottom-20 left-1/2 -translate-x-1/2 w-7 h-7 items-center justify-center rounded-lg text-text-3 hover:text-text-2 hover:bg-surface-2 transition-all border border-border"
-          >
-            <Menu className="w-4 h-4" />
-          </button>
-        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg text-text-3 hover:text-text-2 hover:bg-surface-2 transition-all shrink-0"
+          title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <Menu className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Main nav */}

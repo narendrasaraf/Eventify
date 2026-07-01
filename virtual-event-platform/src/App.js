@@ -35,15 +35,19 @@ axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // Prevent infinite loop if refresh endpoint itself returns 401
+    const hasUserSession = localStorage.getItem('user');
+
+    // Only attempt to refresh tokens if user session is expected to exist,
+    // avoiding infinite redirect/refresh loops for guest users.
     if (
-      error.response?.status === 401 && 
-      !originalRequest._retry && 
+      error.response?.status === 401 &&
+      hasUserSession &&
+      !originalRequest._retry &&
       !originalRequest.url.includes('/refresh')
     ) {
       originalRequest._retry = true;
       try {
-        await axios.post('http://localhost:5000/auth/refresh', {}, { withCredentials: true });
+        await axios.post('http://localhost:5000/api/v1/auth/refresh', {}, { withCredentials: true });
         originalRequest.withCredentials = true;
         return axios(originalRequest);
       } catch (refreshError) {
