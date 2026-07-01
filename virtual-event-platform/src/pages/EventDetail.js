@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -20,9 +20,34 @@ import {
 import { toast } from "react-toastify";
 import axios from "axios";
 
-function EventDetail({ event }) {
+function EventDetail({ event: propEvent }) {
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [event, setEvent] = useState(propEvent || null);
+  const [loadingEvent, setLoadingEvent] = useState(!propEvent);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!propEvent && id) {
+      const fetchEvent = async () => {
+        setLoadingEvent(true);
+        try {
+          const res = await axios.get(`http://localhost:5000/api/events/${id}`, { withCredentials: true });
+          const eventData = res.data.event || res.data.data?.event;
+          if (eventData) {
+            setEvent(eventData);
+          }
+        } catch (err) {
+          console.error("Failed to load event details:", err);
+          toast.error("Failed to load event details.");
+        } finally {
+          setLoadingEvent(false);
+        }
+      };
+      fetchEvent();
+    }
+  }, [id, propEvent]);
 
   // AI Chat Assistant State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -42,7 +67,25 @@ function EventDetail({ event }) {
     }
   }, [chatMessages, isChatOpen]);
 
-  if (!event) return null;
+  if (loadingEvent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
+        <p className="text-slate-400 animate-pulse font-medium">Loading event details...</p>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800 max-w-lg mx-auto">
+        <X className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+        <h3 className="text-xl font-bold text-white mb-2">Event Not Found</h3>
+        <p className="text-slate-400">The event details page you requested does not exist or has been removed.</p>
+        <button onClick={() => navigate('/discover')} className="btn-primary mt-6 mx-auto">Back to Discover Feed</button>
+      </div>
+    );
+  }
 
   const handleJoinMeet = () => {
     const link = event.meetingLink || event.googleMapLink;

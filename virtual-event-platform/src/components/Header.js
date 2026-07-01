@@ -10,10 +10,9 @@ function Header() {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   const navLinks = [
-    { name: 'Events', path: '/allevents' },
-    { name: 'Webinars', path: '/webinars' },
-    { name: 'Conferences', path: '/conferences' },
-    { name: 'Meetups', path: '/meetups' },
+    { name: 'Discover Feed', path: '/discover' },
+    { name: 'AI Co-Creator', path: '/co-creator' },
+    { name: 'Operations Hub', path: '/dashboard' },
   ];
 
   const handleLogout = async () => {
@@ -28,10 +27,10 @@ function Header() {
   };
 
   return (
-    <header className="h-16 bg-slate-950 border-b border-slate-800 sticky top-0 z-50 flex items-center">
+    <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 flex items-center">
       <div className="max-w-7xl mx-auto px-4 w-full flex items-center justify-between">
         {/* Left Section: Logo + Project Name */}
-        <Link to={user ? "/home" : "/"} className="flex items-center gap-3 group">
+        <Link to={user ? "/discover" : "/"} className="flex items-center gap-3 group">
           <div className="bg-indigo-500/10 p-1.5 rounded-lg border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all">
             <img src={logo} alt="Eventify" className="h-6 w-6 object-contain" />
           </div>
@@ -40,30 +39,26 @@ function Header() {
           </span>
         </Link>
 
-        {/* Right Section: Navigation Links + Wallet Button */}
+        {/* Right Section: Navigation Links */}
         <div className="hidden md:flex items-center gap-8">
-          <nav className="flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-sm font-medium transition-colors ${location.pathname === link.path ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
-                  }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="h-4 w-px bg-slate-800" />
+          {user && (
+            <nav className="flex items-center gap-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`text-sm font-medium transition-colors ${location.pathname === link.path ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </nav>
+          )}
 
           <div className="flex items-center gap-5">
             {user ? (
               <div className="flex items-center gap-5">
-                <Link to="/dashboard" className="text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-2">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
                 <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-full px-3 py-1.5">
                   {user.profilePicture ? (
                     <img src={user.profilePicture} alt={user.name} className="h-6 w-6 rounded-full" />
@@ -106,7 +101,7 @@ function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 w-full bg-slate-950 border-b border-slate-800 p-6 flex flex-col gap-6 animate-in fade-in slide-in-from-top-4 duration-300 z-50">
           <nav className="flex flex-col gap-4">
-            {navLinks.map((link) => (
+            {user && navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -117,15 +112,6 @@ function Header() {
                 {link.name}
               </Link>
             ))}
-            {user && (
-              <Link
-                to="/myevents"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-base font-semibold text-slate-300"
-              >
-                Dashboard
-              </Link>
-            )}
           </nav>
 
           <div className="pt-4 border-t border-slate-800 flex flex-col gap-4">

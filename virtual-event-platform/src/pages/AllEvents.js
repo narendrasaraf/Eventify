@@ -40,7 +40,8 @@ function AllEvents() {
     };
 
     fetchData();
-  }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRegisterClick = async (id) => {
     if (!user) {

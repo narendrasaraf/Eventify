@@ -40,7 +40,8 @@ function Dashboard() {
 
     useEffect(() => {
         fetchData();
-    }, [activeTab]); // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -164,7 +165,7 @@ function Dashboard() {
                     </div>
 
                     <div className="flex flex-col gap-3 w-full md:w-auto">
-                        <Link to="/create-event" className="btn-primary flex items-center justify-center gap-2 px-8">
+                        <Link to="/co-creator" className="btn-primary flex items-center justify-center gap-2 px-8">
                             <Plus className="h-4 w-4" /> Create New Event
                         </Link>
                         <button onClick={handleLogout} className="flex items-center justify-center gap-2 text-slate-400 hover:text-red-400 transition-colors text-sm font-medium">
@@ -283,9 +284,9 @@ function Dashboard() {
                                 : "Ready to host? Create your first event and start building your community today."}
                         </p>
                         {activeTab === 'registered' ? (
-                            <Link to="/allevents" className="btn-primary px-8">Browse Events</Link>
+                            <Link to="/discover" className="btn-primary px-8">Browse Events</Link>
                         ) : (
-                            <Link to="/create-event" className="btn-primary px-8">Get Started</Link>
+                            <Link to="/co-creator" className="btn-primary px-8">Get Started</Link>
                         )}
                     </div>
                 ) : (
