@@ -126,7 +126,7 @@ function MyEvents() {
           {activeTab === 'registered' ? (
             <Link to="/discover" className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/20">Browse Discover Feed</Link>
           ) : (
-            <Link to="/co-creator" className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/20">Access AI Assistant</Link>
+            <Link to="/create-event" className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/20">Create Event</Link>
           )}
         </div>
       ) : (

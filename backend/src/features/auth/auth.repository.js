@@ -47,6 +47,16 @@ const UserRepository = {
    */
   updateById: (id, updates) =>
     User.findByIdAndUpdate(id, updates, { new: true, runValidators: true }),
+
+  /**
+   * Find a user by generic filter query.
+   */
+  findOne: (query) => User.findOne(query),
+
+  /**
+   * Find a user by id and return password field.
+   */
+  findByIdWithPassword: (id) => User.findById(id).select('+password'),
 };
 
 module.exports = UserRepository;

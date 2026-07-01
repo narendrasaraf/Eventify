@@ -18,6 +18,9 @@ router.post('/signup', authRateLimiter, signupRules, authController.signup);
 router.post('/login',  authRateLimiter, loginRules,  authController.login);
 router.post('/logout',  authController.logout);
 router.post('/refresh', authController.refresh);
+router.post('/forgot-password', authRateLimiter, authController.forgotPassword);
+router.post('/reset-password/:token', authRateLimiter, authController.resetPassword);
+router.patch('/change-password', protect, authRateLimiter, authController.changePassword);
 
 // Current user
 router.get('/me', protect, authController.getMe);

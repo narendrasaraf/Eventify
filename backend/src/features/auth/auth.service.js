@@ -6,6 +6,7 @@ const AppError = require('../../utils/AppError');
 const jwtUtils = require('../../utils/jwt.utils');
 const logger = require('../../utils/logger');
 const config = require('../../config/index');
+const crypto = require('crypto');
 
 /**
  * AuthService — Business logic layer for authentication.
@@ -139,6 +140,72 @@ const AuthService = {
       Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
     );
     await RefreshToken.create({ token, userId, expiresAt, userAgent, ip });
+  },
+
+  /**
+   * Generates a password recovery token and prints it to the console log.
+   */
+  forgotPassword: async (email) => {
+    const user = await UserRepository.findByEmail(email);
+    if (!user) {
+      throw new AppError('No user found with that email address', 404, 'EMAIL_NOT_FOUND');
+    }
+
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Save token and expiry (1 hour)
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = Date.now() + 3600000;
+    await user.save({ validateBeforeSave: false });
+
+    // Print details in backend log for testing
+    logger.info(`[Reset Token Auth Hook] Reset token for ${email}: ${resetToken}`);
+    return resetToken;
+  },
+
+  /**
+   * Resets password using valid unexpired token.
+   */
+  resetPassword: async (token, password) => {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await UserRepository.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new AppError('Token is invalid or has expired', 400, 'INVALID_RESET_TOKEN');
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    logger.info(`Password successfully reset for user ID: ${user._id}`);
+    return user;
+  },
+
+  /**
+   * Validates old password and sets new password.
+   */
+  changePassword: async (userId, currentPassword, newPassword) => {
+    const user = await UserRepository.findByIdWithPassword(userId);
+    if (!user) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      throw new AppError('Current password is incorrect', 401, 'INVALID_CURRENT_PASSWORD');
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    logger.info(`Password successfully updated for user: ${userId}`);
+    return user;
   },
 };
 

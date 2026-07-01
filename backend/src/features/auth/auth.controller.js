@@ -138,4 +138,64 @@ const googleCallback = [
   }),
 ];
 
-module.exports = { signup, login, refresh, logout, getMe, googleAuth, googleCallback };
+/**
+ * POST /api/v1/auth/forgot-password
+ */
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw new AppError('Email is required', 400, 'EMAIL_REQUIRED');
+  }
+  await AuthService.forgotPassword(email);
+  res.status(200).json({
+    status: 'success',
+    message: 'Password reset token generated and logged to the server console.',
+  });
+});
+
+/**
+ * POST /api/v1/auth/reset-password/:token
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+  if (!password || password.length < 6) {
+    throw new AppError('Password must be at least 6 characters long', 400, 'PASSWORD_TOO_SHORT');
+  }
+  await AuthService.resetPassword(token, password);
+  res.status(200).json({
+    status: 'success',
+    message: 'Password has been successfully reset.',
+  });
+});
+
+/**
+ * PATCH /api/v1/auth/change-password
+ */
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new AppError('Current and new password are required', 400, 'PASSWORDS_REQUIRED');
+  }
+  if (newPassword.length < 6) {
+    throw new AppError('New password must be at least 6 characters long', 400, 'PASSWORD_TOO_SHORT');
+  }
+  await AuthService.changePassword(req.user.id, currentPassword, newPassword);
+  res.status(200).json({
+    status: 'success',
+    message: 'Password has been successfully updated.',
+  });
+});
+
+module.exports = {
+  signup,
+  login,
+  refresh,
+  logout,
+  getMe,
+  googleAuth,
+  googleCallback,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+};

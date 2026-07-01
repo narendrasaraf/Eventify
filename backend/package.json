@@ -9,9 +9,7 @@
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",
-        "bcrypt": "^5.1.1",
         "bcryptjs": "^3.0.3",
-        "body-parser": "^1.20.2",
         "cloudinary": "^2.9.0",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
@@ -20,18 +18,14 @@
         "express-rate-limit": "^8.2.1",
         "express-session": "^1.19.0",
         "express-validator": "^7.3.2",
-        "google-auth-library": "^10.5.0",
-        "googleapis": "^171.1.0",
         "helmet": "^8.1.0",
         "jsonwebtoken": "^9.0.2",
         "mongoose": "^8.2.4",
         "morgan": "^1.11.0",
         "multer": "^1.4.5-lts.1",
-        "nodemailer": "^6.9.13",
         "passport": "^0.7.0",
         "passport-google-oauth20": "^2.0.0",
         "razorpay": "^2.9.6",
-        "uuid": "^14.0.1",
         "winston": "^3.19.0"
     },
     "devDependencies": {

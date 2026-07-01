@@ -11,6 +11,8 @@ const UserDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', phoneNumber: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '' });
+  const [isUpdatingPwd, setIsUpdatingPwd] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -57,6 +59,26 @@ const UserDashboard = () => {
       toast.error(error.response?.data?.message || 'Failed to update profile settings.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (pwdForm.newPassword.length < 6) {
+      toast.warning('New password must be at least 6 characters.');
+      return;
+    }
+
+    setIsUpdatingPwd(true);
+    try {
+      await axios.patch('http://localhost:5000/api/v1/auth/change-password', pwdForm, { withCredentials: true });
+      toast.success('Password updated successfully!');
+      setPwdForm({ currentPassword: '', newPassword: '' });
+    } catch (error) {
+      console.error('Password change failed:', error);
+      toast.error(error.response?.data?.message || 'Failed to update security password.');
+    } finally {
+      setIsUpdatingPwd(false);
     }
   };
 
@@ -192,6 +214,52 @@ const UserDashboard = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Bottom Card: Security Settings / Password Update */}
+        <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 p-8 rounded-3xl md:col-span-3">
+          <h4 className="text-lg font-bold text-white mb-6">Security Settings</h4>
+          <form onSubmit={handlePasswordChange} className="max-w-xl space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white font-medium"
+                  value={pwdForm.currentPassword}
+                  onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white font-medium"
+                  value={pwdForm.newPassword}
+                  onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isUpdatingPwd}
+              className="btn-secondary btn-md transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+            >
+              {isUpdatingPwd ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Updating...
+                </>
+              ) : (
+                'Update Password Credentials'
+              )}
+            </button>
+          </form>
         </div>
       </div>
     </div>
