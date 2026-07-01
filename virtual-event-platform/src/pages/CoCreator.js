@@ -2,40 +2,45 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Sparkles,
-  Loader2,
-  Calendar,
-  Clock,
-  MapPin,
-  Globe,
-  Tag,
-  CreditCard,
-  CheckCircle,
-  HelpCircle,
-  Video
+  Sparkles, Loader2, Calendar, MapPin,
+  Globe, Tag, CreditCard, CheckCircle, Video,
+  Zap, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-function CoCreator() {
+const SAMPLE_PROMPTS = [
+  'A 2-day tech conference on Fullstack Development next Friday at Hyatt Regency Mumbai, entry ₹1499, capacity 100 people.',
+  'A free online workshop on Introduction to Python Data Science using Google Meet on July 15th from 4 PM to 6 PM.',
+  'A hybrid corporate panel discussion about AI Innovation next month, starting at 10 AM, ticket price ₹500.',
+];
+
+// ── DRAFT FIELD ───────────────────────────────────────────
+function DraftField({ icon: Icon, label, value }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-3 bg-surface-2 rounded-xl p-3 border border-border">
+      <Icon className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+      <div>
+        <div className="text-xs text-text-3 mb-0.5">{label}</div>
+        <div className="text-sm text-text-1 font-medium">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── PAGE ──────────────────────────────────────────────────
+export default function CoCreator() {
   const [prompt, setPrompt] = useState('');
-  const [isDrafting, setIsDrafting] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [draftResult, setDraftResult] = useState(null);
+  const [drafting, setDrafting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [draft, setDraft] = useState(null);
   const navigate = useNavigate();
 
-  const samplePrompts = [
-    "A 2-day tech conference on Fullstack Development next Friday at Hyatt Regency Mumbai, entry ₹1499, capacity 100 people.",
-    "A free online workshop on Introduction to Python Data Science using Google Meet on July 15th from 4 PM to 6 PM.",
-    "A hybrid corporate panel discussion about AI Innovation next month, starting at 10 AM, ticket price ₹500."
-  ];
-
-  const handleDraftSubmit = async (e) => {
+  const handleDraft = async (e) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
-
-    setIsDrafting(true);
-    setDraftResult(null);
-
+    if (!prompt.trim() || drafting) return;
+    setDrafting(true);
+    setDraft(null);
     try {
       const res = await axios.post(
         'http://localhost:5000/api/v1/intelligence/draft-event',
@@ -43,108 +48,91 @@ function CoCreator() {
         { withCredentials: true }
       );
       if (res.data.status === 'success') {
-        setDraftResult(res.data.data.eventDraft);
-        toast.success('AI successfully drafted your event details!');
+        setDraft(res.data.data.eventDraft);
+        toast.success('AI drafted your event!');
       }
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || 'Failed to parse event description');
     } finally {
-      setIsDrafting(false);
+      setDrafting(false);
     }
   };
 
   const handlePublish = async () => {
-    if (!draftResult) return;
-
-    setIsPublishing(true);
+    if (!draft || publishing) return;
+    setPublishing(true);
     try {
       const form = new FormData();
-      Object.entries(draftResult).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          form.append(key, value);
-        }
+      Object.entries(draft).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) form.append(k, v);
       });
-
-      const res = await axios.post(
-        'http://localhost:5000/api/events',
-        form,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          withCredentials: true
-        }
-      );
-
+      const res = await axios.post('http://localhost:5000/api/events', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+      });
       if (res.data.status === 'success') {
-        toast.success('Your event has been successfully initialized and published!');
+        toast.success('Event published successfully!');
         navigate('/dashboard');
       }
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || 'Failed to publish event');
     } finally {
-      setIsPublishing(false);
+      setPublishing(false);
     }
   };
 
   return (
-    <div className="section-container max-w-7xl mx-auto px-4 py-8 animate-fadeIn">
-      <div className="mb-8 text-left">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="bg-indigo-500/10 p-2 rounded-xl border border-indigo-500/20 ai-spark-pulse">
-            <Sparkles className="h-6 w-6 text-indigo-400" />
+    <div className="page-wrap space-y-8">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-brand" />
           </div>
-          <span className="text-sm font-semibold tracking-widest text-indigo-400 uppercase">AI workspace</span>
+          <span className="badge badge-brand">AI Workspace</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">AI Co-Creator Canvas</h1>
-        <p className="text-slate-400 text-base mt-2 max-w-2xl">
-          Describe your event idea in natural language and let Eventify AI build the configuration structure instantly.
+        <h1 className="font-display text-3xl font-bold text-text-1">AI Co-Creator</h1>
+        <p className="text-text-2 mt-1.5 max-w-xl">
+          Describe your event in plain English. The AI will draft a complete event configuration — instantly.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Left Pane: prompt Input & Controls */}
-        <div className="glass-panel space-y-6">
-          <form onSubmit={handleDraftSubmit} className="space-y-4">
-            <div className="flex flex-col gap-2 text-left">
-              <label className="text-sm font-bold text-slate-300 ml-1">Event Concept Prompt</label>
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
+        {/* Left — Input */}
+        <div className="card space-y-5">
+          <form onSubmit={handleDraft} className="space-y-4">
+            <div>
+              <label className="label">Event Description</label>
               <textarea
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g. A weekend React coding boot camp starting July 12th in Pune, registration fee 500 INR, limit 80 attendees..."
-                className="w-full h-44 bg-slate-950/80 border border-slate-800 text-slate-100 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all placeholder:text-slate-600 text-sm leading-relaxed"
-                disabled={isDrafting}
+                onChange={e => setPrompt(e.target.value)}
+                disabled={drafting}
+                rows={6}
+                placeholder="e.g. A 2-day fullstack conference at Hyatt Mumbai next Friday, ₹1499 entry, 100 attendees..."
+                className="input font-sans leading-relaxed resize-none"
               />
             </div>
-
             <button
               type="submit"
-              disabled={isDrafting || !prompt.trim()}
-              className="btn-accent w-full py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              disabled={drafting || !prompt.trim()}
+              className="btn-primary btn-lg w-full"
             >
-              {isDrafting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin text-white" />
-                  <span>Drafting Event Details...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-5 w-5 text-white" />
-                  <span>Draft Event Configuration</span>
-                </>
-              )}
+              {drafting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Drafting with AI...</>
+                : <><Sparkles className="w-4 h-4" /> Generate Event Draft</>
+              }
             </button>
           </form>
 
-          {/* Quick templates */}
-          <div className="space-y-3 pt-4 border-t border-slate-800/60 text-left">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Try these prompt styles</h4>
-            <div className="flex flex-col gap-2.5">
-              {samplePrompts.map((p, idx) => (
+          {/* Sample prompts */}
+          <div className="border-t border-border pt-4 space-y-3">
+            <div className="text-xs font-semibold text-text-3 uppercase tracking-wider">Try an example</div>
+            <div className="space-y-2">
+              {SAMPLE_PROMPTS.map((p, i) => (
                 <button
-                  key={idx}
+                  key={i}
                   onClick={() => setPrompt(p)}
-                  className="text-left text-xs bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/40 rounded-xl p-3 text-slate-400 hover:text-slate-200 transition-all leading-relaxed"
+                  className="w-full text-left text-xs text-text-2 hover:text-text-1 bg-surface-2 hover:bg-surface-3 border border-border rounded-xl p-3 leading-relaxed transition-all"
                 >
                   "{p}"
                 </button>
@@ -153,125 +141,83 @@ function CoCreator() {
           </div>
         </div>
 
-        {/* Right Pane: Live preview panel */}
-        <div className="glass-panel min-h-[500px] flex flex-col justify-between border-dashed border-2 border-slate-800/80 bg-slate-900/10">
-          {isDrafting ? (
-            /* Loading Skeleton state */
-            <div className="space-y-6 animate-pulse p-4">
-              <div className="h-8 bg-slate-800 rounded-lg w-2/3" />
-              <div className="space-y-3">
-                <div className="h-4 bg-slate-800 rounded w-1/3" />
-                <div className="h-4 bg-slate-800 rounded w-1/2" />
-              </div>
-              <div className="h-32 bg-slate-800 rounded-2xl w-full" />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-10 bg-slate-800 rounded-xl w-full" />
-                <div className="h-10 bg-slate-800 rounded-xl w-full" />
+        {/* Right — Draft Preview */}
+        <div className="card min-h-[420px] flex flex-col">
+          {drafting ? (
+            <div className="flex-1 space-y-4 animate-pulse">
+              <div className="skeleton h-6 w-2/3 rounded-lg" />
+              <div className="skeleton h-4 w-1/2 rounded-lg" />
+              <div className="skeleton h-4 w-3/4 rounded-lg" />
+              <div className="skeleton h-24 rounded-xl" />
+              <div className="grid grid-cols-2 gap-3">
+                {[1,2,3,4].map(i => <div key={i} className="skeleton h-14 rounded-xl" />)}
               </div>
             </div>
-          ) : draftResult ? (
-            /* Visual preview of drafted payload */
-            <div className="space-y-6 text-left">
-              <div className="flex items-center justify-between border-b border-slate-800/60 pb-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-indigo-400" />
-                  <h3 className="text-lg font-bold text-white uppercase tracking-wider">AI Draft Proposal</h3>
-                </div>
-                <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1">
-                  <span className="text-xs font-bold text-indigo-400">{draftResult.type || 'Event'}</span>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-2xl font-extrabold text-white tracking-tight leading-tight">
-                  {draftResult.eventName || 'Untitled Event'}
-                </h2>
-                <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-                  {draftResult.description || 'No description extracted.'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/40 pt-4">
-                <div className="flex items-center gap-3 text-sm text-slate-300 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/20">
-                  <Calendar className="h-4 w-4 text-indigo-400 flex-shrink-0" />
-                  <div>
-                    <span className="text-slate-500 block text-xs">Start Date</span>
-                    {draftResult.startDate ? new Date(draftResult.startDate).toLocaleString() : 'N/A'}
+          ) : draft ? (
+            <div className="flex-1 flex flex-col space-y-5">
+              {/* Draft header */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-4 h-4 text-success" />
+                    <span className="text-xs font-semibold text-success">AI Draft Ready</span>
+                    {draft.type && <span className="badge badge-brand">{draft.type}</span>}
                   </div>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm text-slate-300 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/20">
-                  <Clock className="h-4 w-4 text-indigo-400 flex-shrink-0" />
-                  <div>
-                    <span className="text-slate-500 block text-xs">End Date</span>
-                    {draftResult.endDate ? new Date(draftResult.endDate).toLocaleString() : 'N/A'}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm text-slate-300 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/20">
-                  <Globe className="h-4 w-4 text-indigo-400 flex-shrink-0" />
-                  <div>
-                    <span className="text-slate-500 block text-xs">Mode</span>
-                    {draftResult.mode || 'N/A'}
-                  </div>
-                </div>
-
-                {draftResult.mode === 'Online' || draftResult.mode === 'Hybrid' ? (
-                  <div className="flex items-center gap-3 text-sm text-slate-300 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/20">
-                    <Video className="h-4 w-4 text-indigo-400 flex-shrink-0" />
-                    <div>
-                      <span className="text-slate-500 block text-xs">Platform</span>
-                      {draftResult.meetingPlatform || 'Google Meet'}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 text-sm text-slate-300 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/20">
-                    <MapPin className="h-4 w-4 text-indigo-400 flex-shrink-0" />
-                    <div>
-                      <span className="text-slate-500 block text-xs">Venue</span>
-                      {draftResult.venueName || 'To Be Announced'}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between border-t border-slate-800/40 pt-4 text-sm bg-slate-950/20 p-4 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-indigo-400" />
-                  <span className="font-semibold text-slate-300">{draftResult.ticketType || 'Free'}</span>
-                </div>
-                <span className="font-bold text-white text-lg">
-                  {draftResult.ticketType === 'Paid' ? `₹${draftResult.ticketPrice}` : 'Free'}
-                </span>
-              </div>
-
-              <div className="pt-6">
-                <button
-                  onClick={handlePublish}
-                  disabled={isPublishing}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-4 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-                >
-                  {isPublishing ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin text-white" />
-                      <span>Creating Event...</span>
-                    </>
-                  ) : (
-                    <span>Confirm & Launch Event</span>
+                  <h2 className="font-display text-xl font-bold text-text-1 leading-tight">
+                    {draft.eventName || 'Untitled Event'}
+                  </h2>
+                  {draft.description && (
+                    <p className="text-sm text-text-2 mt-2 leading-relaxed line-clamp-3">{draft.description}</p>
                   )}
+                </div>
+                <button
+                  onClick={() => { setDraft(null); setPrompt(''); }}
+                  className="btn-ghost btn-sm shrink-0"
+                  title="Start over"
+                >
+                  <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Draft fields grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                <DraftField icon={Calendar} label="Start Date"
+                  value={draft.startDate ? new Date(draft.startDate).toLocaleString() : null} />
+                <DraftField icon={Calendar} label="End Date"
+                  value={draft.endDate ? new Date(draft.endDate).toLocaleString() : null} />
+                <DraftField icon={Globe} label="Mode" value={draft.mode} />
+                {(draft.mode === 'Online' || draft.mode === 'Hybrid')
+                  ? <DraftField icon={Video} label="Platform" value={draft.meetingPlatform || 'Google Meet'} />
+                  : <DraftField icon={MapPin} label="Venue" value={draft.venueName} />
+                }
+                <DraftField icon={Tag} label="Category" value={draft.category} />
+                <DraftField icon={CreditCard} label="Ticket"
+                  value={draft.ticketType === 'Paid' ? `₹${draft.ticketPrice}` : draft.ticketType || 'Free'} />
+              </div>
+
+              {/* Publish */}
+              <button
+                onClick={handlePublish}
+                disabled={publishing}
+                className="btn-primary btn-lg w-full mt-auto"
+              >
+                {publishing
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>
+                  : <><Zap className="w-4 h-4" /> Confirm & Publish Event</>
+                }
+              </button>
             </div>
           ) : (
-            /* Empty state guiding user to compile */
-            <div className="flex flex-col items-center justify-center gap-4 text-center my-auto p-8">
-              <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800/60 shadow-xl">
-                <HelpCircle className="h-10 w-10 text-slate-500" />
+            <div className="empty-state flex-1">
+              <div className="w-16 h-16 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-brand/60" />
               </div>
-              <h3 className="text-lg font-bold text-white tracking-tight">Awaiting Event Parameters</h3>
-              <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                Your AI-constructed draft preview card will populate here in real-time as you describe your concept parameters in the input panel.
-              </p>
+              <div>
+                <div className="font-semibold text-text-1 mb-1">Waiting for your idea</div>
+                <div className="text-sm text-text-2 max-w-xs">
+                  Write a description on the left and hit Generate. Your event draft will appear here.
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -279,5 +225,3 @@ function CoCreator() {
     </div>
   );
 }
-
-export default CoCreator;

@@ -1,13 +1,1 @@
-.App {
-  text-align: center;
-  /* Background handled by index.css body */
-  background-color: transparent;
-  min-height: 100vh;
-  /* Padding handled by page containers usually, but keep specific if needed */
-}
-
-/* Global Content Wrapper */
-.content {
-  width: 100%;
-  box-sizing: border-box;
-}
+/* Reset App.css — all styles live in index.css and tailwind */

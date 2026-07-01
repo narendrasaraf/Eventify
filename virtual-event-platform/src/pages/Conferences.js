@@ -1,286 +1,200 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Search, Filter, RotateCcw, Loader2, ArrowLeft } from 'lucide-react';
-import EventDetail from './EventDetail';
+import { useNavigate } from 'react-router-dom';
+import {
+  Search, Loader2, MonitorPlay, Filter, X,
+  Calendar, MapPin, Tag, ArrowRight, RotateCcw,
+} from 'lucide-react';
 import EventCard from '../components/EventCard';
-import PageHeader from '../components/PageHeader';
+import { toast } from 'react-toastify';
 
-function Conferences() {
-  const [conferences, setConferences] = useState([]);
-  const [filteredConferences, setFilteredConferences] = useState([]);
+// ── PREDEFINED FALLBACK DATA ───────────────────────────────
+const PREDEFINED = [
+  { _id: 'conf_1', eventName: 'Annual Tech Summit 2025', title: 'Annual Tech Summit 2025', startDate: '2025-08-10', venueName: 'Hyderabad International Convention Center', organizerName: 'TechLeaders Association', category: 'Technology', ticketType: 'Free', ticketPrice: 0, description: "India's largest technology conference bringing together developers, CTOs, and innovators for 3 days of learning." },
+  { _id: 'conf_2', eventName: 'Healthcare Innovation Conference', title: 'Healthcare Innovation Conference', startDate: '2025-09-18', venueName: 'Taj Conference Center, Mumbai', organizerName: 'Health Innovations India', category: 'Healthcare', ticketType: 'Paid', ticketPrice: 1499, description: 'Exploring the next generation of digital health, AI diagnostics, and patient experience transformation.' },
+  { _id: 'conf_3', eventName: 'Financial Markets Summit', title: 'Financial Markets Summit', startDate: '2025-10-05', venueName: 'The Grand Ballroom, New Delhi', organizerName: 'Financial Today Group', category: 'Finance', ticketType: 'Paid', ticketPrice: 2499, description: 'A premier forum for fintech leaders, investors, and regulators to explore global capital market trends.' },
+  { _id: 'conf_4', eventName: 'AI & Future of Work', title: 'AI & Future of Work', startDate: '2025-11-12', venueName: 'ITC Grand Chola, Chennai', organizerName: 'DeepWork Collective', category: 'Technology', ticketType: 'Free', ticketPrice: 0, description: 'Understanding how artificial intelligence is reshaping industries, jobs, and human collaboration.' },
+  { _id: 'conf_5', eventName: 'Green Energy Summit', title: 'Green Energy Summit', startDate: '2025-12-01', venueName: 'Science City Auditorium, Kolkata', organizerName: 'EcoForward India', category: 'Environment', ticketType: 'Free', ticketPrice: 0, description: 'Bringing together energy researchers, policymakers, and entrepreneurs to accelerate the clean energy transition.' },
+  { _id: 'conf_6', eventName: 'Design Systems Conference', title: 'Design Systems Conference', startDate: '2025-08-22', venueName: 'CoWrks Prestige, Bengaluru', organizerName: 'UX Collective India', category: 'Design', ticketType: 'Paid', ticketPrice: 999, description: 'For product designers and frontend engineers passionate about scalable, accessible design systems.' },
+];
+
+const CATEGORIES = ['All', 'Technology', 'Healthcare', 'Finance', 'Design', 'Environment', 'Business'];
+
+// ── FILTERS BAR ───────────────────────────────────────────
+function FiltersBar({ search, setSearch, category, setCategory, price, setPrice, onReset, total }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input pl-10 w-full"
+            placeholder="Search conferences..."
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-3 hover:text-text-2">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Price filter */}
+        <select
+          value={price} onChange={e => setPrice(e.target.value)}
+          className="input w-full sm:w-40 cursor-pointer"
+        >
+          <option>All Prices</option>
+          <option>Free</option>
+          <option>Paid</option>
+        </select>
+
+        {/* Reset */}
+        <button onClick={onReset} className="btn-secondary btn-md shrink-0">
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Category chips */}
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map(c => (
+          <button
+            key={c}
+            onClick={() => setCategory(c)}
+            className={`chip ${category === c ? 'chip-active' : 'chip-idle'}`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <div className="text-xs text-text-3">{total} conference{total !== 1 ? 's' : ''} found</div>
+    </div>
+  );
+}
+
+// ── PAGE ──────────────────────────────────────────────────
+export default function Conferences() {
+  const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [registeredConferences, setRegisteredConferences] = useState({});
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    category: 'All Categories',
-    date: 'All Dates',
-    price: 'Price - Any',
-  });
+  const [registered, setRegistered] = useState({});
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All');
+  const [price, setPrice] = useState('All Prices');
+  const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('registeredConferences')) || {};
-    setRegisteredConferences(saved);
-
-    if (user && (user._id || user.id)) {
-      fetchUserBookings();
-    }
-  }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
-
-  const fetchUserBookings = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/my-bookings`, { withCredentials: true });
-      const bookings = response.data;
-      const registeredMap = { ...registeredConferences };
-      bookings.forEach(b => {
-        if (b.eventId) registeredMap[b.eventId._id || b.eventId.id] = true;
-      });
-      setRegisteredConferences(registeredMap);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    }
-  };
-
-  useEffect(() => {
-    setTimeout(() => {
-      const predefinedConferences = [
-        {
-          id: 'conf_1',
-          title: "Annual Tech Summit 2025",
-          date: "2025-06-10",
-          location: "Hyderabad International Convention Center",
-          organizer: "TechLeaders Association",
-          category: "Technology",
-          price: 0,
-          image: "https://img.freepik.com/free-vector/technology-conference-bannertemplate_1361-2226.jpg"
-        },
-        {
-          id: 'conf_2',
-          title: "Healthcare Innovation Conference",
-          date: "2025-06-18",
-          location: "Taj Conference Center, Mumbai",
-          organizer: "Health Innovations India",
-          category: "Healthcare",
-          price: 100,
-          image: "https://img.freepik.com/free-psd/gradient-medical-care-facebook-template_23-2150514853.jpg"
-        },
-        {
-          id: 'conf_3',
-          title: "Financial Markets Summit",
-          date: "2025-07-05",
-          location: "The Grand Ballroom, New Delhi, India",
-          organizer: "Financial Today Group",
-          category: "Finance",
-          price: 200,
-          image: "https://img.freepik.com/free-vector/financial-business-world-successful-management-concept_1284-5601.jpg"
-        }
-      ];
-
-      const storedConferences = JSON.parse(localStorage.getItem('Conference')) || [];
-      const allConferences = [...predefinedConferences, ...storedConferences];
-      const uniqueConferences = Array.from(new Map(allConferences.map(e => [e.id || e._id, e])).values());
-
-      setConferences(uniqueConferences);
-      setFilteredConferences(uniqueConferences);
-      setLoading(false);
-    }, 800);
+  const user = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
   }, []);
 
   useEffect(() => {
-    let filtered = [...conferences];
+    const saved = JSON.parse(localStorage.getItem('registeredConferences') || '{}');
+    setRegistered(saved);
+    fetchData();
+  }, []); // eslint-disable-line
 
-    if (searchTerm) {
-      filtered = filtered.filter(c =>
-        (c.title || c.eventName).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.organizer || c.organizerName).toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (filters.category !== 'All Categories') {
-      filtered = filtered.filter(c => c.category === filters.category);
-    }
-
-    if (filters.date !== 'All Dates') {
-      const today = new Date();
-      filtered = filtered.filter(c => {
-        const eventDate = new Date(c.date || c.startDate);
-        if (filters.date === 'Today') {
-          return eventDate.toDateString() === today.toDateString();
-        } else if (filters.date === 'Tomorrow') {
-          const tomorrow = new Date(today);
-          tomorrow.setDate(today.getDate() + 1);
-          return eventDate.toDateString() === tomorrow.toDateString();
-        } else if (filters.date === 'This Month') {
-          return eventDate.getMonth() === today.getMonth() &&
-            eventDate.getFullYear() === today.getFullYear();
-        }
-        return true;
-      });
-    }
-
-    if (filters.price !== 'Price - Any') {
-      filtered = filtered.filter(c => {
-        if (filters.price === 'Free') return (c.price === 0 || c.ticketType === 'Free');
-        if (filters.price === 'Paid') return (c.price > 0 || c.ticketType === 'Paid');
-        return true;
-      });
-    }
-
-    setFilteredConferences(filtered);
-  }, [filters, conferences, searchTerm]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleRegisterClick = async (id) => {
-    if (!user) {
-      alert("Please login to register for events.");
-      return;
-    }
-
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/book', {
-        eventId: id
-      }, { withCredentials: true });
+      const [evRes, bkRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/v1/events?type=Conference').catch(() => ({ data: [] })),
+        user ? axios.get('http://localhost:5000/api/v1/bookings', { withCredentials: true }).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+      ]);
 
-      if (response.status === 201) {
-        setRegisteredConferences(prev => ({ ...prev, [id]: true }));
-        const current = JSON.parse(localStorage.getItem('registeredConferences')) || {};
-        localStorage.setItem('registeredConferences', JSON.stringify({ ...current, [id]: true }));
-        alert("Registration Successful!");
-      }
-    } catch (error) {
-      console.error('Registration failed:', error);
-      const msg = error.response?.data?.error || "Registration failed. Please try again.";
-      alert(msg);
+      const live = Array.isArray(evRes.data) ? evRes.data : evRes.data.data?.events || [];
+      const merged = [...live, ...PREDEFINED];
+      const unique = Array.from(new Map(merged.map(c => [c._id || c.id, c])).values());
+      setAll(unique);
+
+      const bkArr = Array.isArray(bkRes.data) ? bkRes.data : bkRes.data.data?.bookings || [];
+      const regMap = { ...saved };
+      bkArr.forEach(b => { if (b.eventId) regMap[b.eventId._id || b.eventId.id] = true; });
+      setRegistered(regMap);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = (id) => {
-    const updated = conferences.filter(c => (c.id || c._id) !== id);
-    setConferences(updated);
-    localStorage.setItem('Conference', JSON.stringify(updated));
+  const saved = useMemo(() => JSON.parse(localStorage.getItem('registeredConferences') || '{}'), []);
+
+  const filtered = useMemo(() => {
+    let list = all;
+    if (search) list = list.filter(c => (c.eventName || c.title || '').toLowerCase().includes(search.toLowerCase()));
+    if (category !== 'All') list = list.filter(c => c.category === category);
+    if (price === 'Free') list = list.filter(c => c.ticketType === 'Free' || c.ticketPrice === 0);
+    if (price === 'Paid') list = list.filter(c => c.ticketType === 'Paid' || c.ticketPrice > 0);
+    return list;
+  }, [all, search, category, price]);
+
+  const handleRegister = async (id) => {
+    if (!user) { toast.warning('Please login to register.'); navigate('/login'); return; }
+    try {
+      await axios.post('http://localhost:5000/api/v1/bookings', { eventId: id }, { withCredentials: true });
+      const next = { ...registered, [id]: true };
+      setRegistered(next);
+      localStorage.setItem('registeredConferences', JSON.stringify(next));
+      toast.success('Registered for conference!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Registration failed');
+    }
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setFilters({
-      category: 'All Categories',
-      date: 'All Dates',
-      price: 'Price - Any'
-    });
-  };
-
-  if (selectedEvent) {
-    return (
-      <div className="section-container">
-        <button
-          className="btn-secondary mb-8 inline-flex items-center gap-2"
-          onClick={() => setSelectedEvent(null)}
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Conferences
-        </button>
-        <EventDetail event={selectedEvent} />
-      </div>
-    );
-  }
+  const reset = () => { setSearch(''); setCategory('All'); setPrice('All Prices'); };
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Conferences"
-        subtitle="Explore upcoming conferences and high-profile professional summits from global leaders."
-      />
-
-      {/* Filter Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-lg">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <input
-            type="text"
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white"
-            placeholder="Search by title or organizer..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="flex gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-slate-400">
-            <Filter className="h-4 w-4 text-indigo-500" />
-            <select
-              className="bg-transparent text-sm focus:outline-none cursor-pointer"
-              name="category"
-              value={filters.category}
-              onChange={handleFilterChange}
-            >
-              <option className="bg-slate-950">All Categories</option>
-              <option className="bg-slate-950">Technology</option>
-              <option className="bg-slate-950">Business</option>
-              <option className="bg-slate-950">Healthcare</option>
-              <option className="bg-slate-950">Finance</option>
-            </select>
+    <div className="page-wrap space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <MonitorPlay className="w-4 h-4 text-violet-400" />
+            </div>
+            <span className="badge badge-neutral">Core Module</span>
           </div>
-
-          <select
-            className="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-sm focus:outline-none cursor-pointer text-slate-400"
-            name="date"
-            value={filters.date}
-            onChange={handleFilterChange}
-          >
-            <option className="bg-slate-950">All Dates</option>
-            <option className="bg-slate-950">Today</option>
-            <option className="bg-slate-950">Tomorrow</option>
-            <option className="bg-slate-950">This Month</option>
-          </select>
-
-          <select
-            className="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-sm focus:outline-none cursor-pointer text-slate-400"
-            name="price"
-            value={filters.price}
-            onChange={handleFilterChange}
-          >
-            <option className="bg-slate-950">Price - Any</option>
-            <option className="bg-slate-950">Free</option>
-            <option className="bg-slate-950">Paid</option>
-          </select>
-
-          <button
-            onClick={resetFilters}
-            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-slate-400"
-            title="Reset Filters"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
+          <h1 className="font-display text-3xl font-bold text-text-1">Conferences</h1>
+          <p className="text-text-2 mt-1.5 max-w-lg">
+            Professional multi-track conferences across technology, business, health, and more. Find your next big event.
+          </p>
         </div>
       </div>
 
+      {/* Filters */}
+      <FiltersBar
+        search={search} setSearch={setSearch}
+        category={category} setCategory={setCategory}
+        price={price} setPrice={setPrice}
+        onReset={reset} total={filtered.length}
+      />
+
+      {/* Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 gap-4">
-          <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
-          <p className="text-slate-400 animate-pulse">Loading conferences...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-72" />)}
         </div>
-      ) : filteredConferences.length === 0 ? (
-        <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
-          <Search className="h-12 w-12 text-slate-700 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">No conferences found</h3>
-          <p className="text-slate-400">Try adjusting your filters or search terms.</p>
-          <button onClick={resetFilters} className="bg-slate-800 text-white px-6 py-2 rounded-lg mt-6">Clear All Filters</button>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state card">
+          <div className="empty-icon"><MonitorPlay className="w-8 h-8" /></div>
+          <div>
+            <div className="font-semibold text-text-1 mb-1">No conferences found</div>
+            <div className="text-sm text-text-2">Try adjusting your filters or search term.</div>
+          </div>
+          <button onClick={reset} className="btn-secondary btn-md">
+            <RotateCcw className="w-4 h-4" /> Clear Filters
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredConferences.map(conference => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 grid-fade">
+          {filtered.map(c => (
             <EventCard
-              key={conference.id || conference._id}
-              event={conference}
-              isRegistered={registeredConferences[conference.id || conference._id]}
-              onRegister={handleRegisterClick}
-              onClick={setSelectedEvent}
-              onDelete={handleDelete}
+              key={c._id}
+              event={{ ...c, title: c.eventName || c.title, category: c.category || 'Conference', location: c.venueName || c.location }}
+              isRegistered={registered[c._id]}
+              onRegister={handleRegister}
             />
           ))}
         </div>
@@ -288,5 +202,3 @@ function Conferences() {
     </div>
   );
 }
-
-export default Conferences;

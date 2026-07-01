@@ -210,13 +210,13 @@ function EventDetail({ event: propEvent }) {
     : event.time;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
+    <div className="max-w-7xl mx-auto px-6 py-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Left Column: Image and Description */}
         <div className="lg:col-span-2 space-y-8">
           <div className="relative group rounded-3xl overflow-hidden shadow-2xl shadow-indigo-500/10 border border-slate-800">
             <img
-              src={event.posterUrl || event.image}
+              src={event.posterUrl ? (event.posterUrl.startsWith('/uploads') ? `http://localhost:5000${event.posterUrl}` : event.posterUrl) : event.image}
               alt={event.eventName}
               className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-700"
             />

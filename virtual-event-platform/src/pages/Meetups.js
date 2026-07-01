@@ -1,266 +1,165 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Search, Filter, RotateCcw, Loader2, ArrowLeft } from 'lucide-react';
-import EventDetail from './EventDetail';
+import { useNavigate } from 'react-router-dom';
+import {
+  Search, Users, X, RotateCcw,
+} from 'lucide-react';
 import EventCard from '../components/EventCard';
-import PageHeader from '../components/PageHeader';
+import { toast } from 'react-toastify';
 
-function Meetups() {
-  const [meetups, setMeetups] = useState([]);
-  const [filteredMeetups, setFilteredMeetups] = useState([]);
+const PREDEFINED = [
+  { _id: 'meet_1', eventName: 'Pune JavaScript Developers Meet', title: 'Pune JavaScript Developers Meet', startDate: '2025-08-20', venueName: 'Workspaces Co., Koregaon Park', organizerName: 'Pune JS Community', category: 'Technology', ticketType: 'Free', ticketPrice: 0, description: 'Monthly gathering for JavaScript enthusiasts — lightning talks, networking, and live coding sessions.' },
+  { _id: 'meet_2', eventName: 'Book Lovers Club Meetup', title: 'Book Lovers Club Meetup', startDate: '2025-08-25', venueName: 'Cafe Reading Room, Aundh', organizerName: 'Pune Readers Circle', category: 'Books & Literature', ticketType: 'Free', ticketPrice: 0, description: "An intimate evening for bibliophiles - this month's pick: The Remains of the Day." },
+  { _id: 'meet_3', eventName: 'Entrepreneurship Networking Brunch', title: 'Entrepreneurship Networking Brunch', startDate: '2025-09-02', venueName: 'Business Hub, Viman Nagar', organizerName: 'Startup Catalysts', category: 'Business', ticketType: 'Paid', ticketPrice: 499, description: 'Casual Sunday brunch for founders, investors, and operators. Build real relationships over good food.' },
+  { _id: 'meet_4', eventName: 'Bangalore AI Builders Meetup', title: 'Bangalore AI Builders Meetup', startDate: '2025-09-10', venueName: 'IndiQube Edge, HSR Layout', organizerName: 'AI Tinkerers BLR', category: 'Technology', ticketType: 'Free', ticketPrice: 0, description: 'Monthly meetup for ML engineers and AI researchers — demos, papers, and community discussions.' },
+  { _id: 'meet_5', eventName: 'Women in Tech Connect', title: 'Women in Tech Connect', startDate: '2025-09-18', venueName: 'WeWork Galaxy, Bengaluru', organizerName: 'SheTech India', category: 'Technology', ticketType: 'Free', ticketPrice: 0, description: 'A welcoming space for women in technology — mentoring, career sessions, and peer networking.' },
+  { _id: 'meet_6', eventName: 'Hyderabad Photography Walk', title: 'Hyderabad Photography Walk', startDate: '2025-10-05', venueName: 'Charminar, Old City', organizerName: 'HYD Lens Collective', category: 'Art & Photography', ticketType: 'Free', ticketPrice: 0, description: 'Explore the iconic old city of Hyderabad through a lens — open to all skill levels.' },
+];
+
+const CATEGORIES = ['All', 'Technology', 'Business', 'Books & Literature', 'Art & Photography', 'Design'];
+
+export default function Meetups() {
+  const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [joinedEvents, setJoinedEvents] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    category: 'All Categories',
-    date: 'All Dates',
-    price: 'Price - Any',
-  });
+  const [joined, setJoined] = useState({});
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All');
+  const [price, setPrice] = useState('All Prices');
+  const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-
-  useEffect(() => {
-    const savedJoined = JSON.parse(localStorage.getItem('joinedMeetups')) || {};
-    setJoinedEvents(savedJoined);
-
-    if (user && (user._id || user.id)) {
-      fetchUserBookings();
-    }
-  }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
-
-  const fetchUserBookings = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/my-bookings`, { withCredentials: true });
-      const bookings = response.data;
-      const joinedMap = { ...joinedEvents };
-      bookings.forEach(b => {
-        if (b.eventId) joinedMap[b.eventId._id || b.eventId.id] = true;
-      });
-      setJoinedEvents(joinedMap);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    }
-  };
-
-  useEffect(() => {
-    setTimeout(() => {
-      const dummyMeetups = [
-        {
-          id: 'meet_1',
-          title: "Pune JavaScript Developers",
-          date: "2025-04-20",
-          location: "Workspaces Co., Koregaon Park",
-          organizer: "Pune JS Community",
-          category: "Technology",
-          price: 0,
-          image: "https://img.freepik.com/free-vector/gradient-halftone-technology-webinar_23-2149195110.jpg"
-        },
-        {
-          id: 'meet_2',
-          title: "Book Lovers Club Meetup",
-          date: "2025-04-25",
-          location: "Cafe Reading Room, Aundh",
-          organizer: "Pune Readers Circle",
-          category: "Books & Literature",
-          price: 0,
-          image: "https://img.freepik.com/free-vector/hand-drawn-book-club-youtube-thumbnail_23-2149702259.jpg"
-        },
-        {
-          id: 'meet_3',
-          title: "Entrepreneurship Networking",
-          date: "2025-05-02",
-          location: "Business Hub, Viman Nagar",
-          organizer: "Startup Catalysts",
-          category: "Business",
-          price: 50,
-          image: "https://img.freepik.com/free-vector/flat-design-business-workshop-youtube-thumbnail-template_23-2149393100.jpg"
-        }
-      ];
-      setMeetups(dummyMeetups);
-      setFilteredMeetups(dummyMeetups);
-      setLoading(false);
-    }, 800);
+  const user = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
   }, []);
 
   useEffect(() => {
-    let filtered = [...meetups];
+    const saved = JSON.parse(localStorage.getItem('joinedMeetups') || '{}');
+    setJoined(saved);
+    fetchData();
+  }, []); // eslint-disable-line
 
-    if (searchTerm) {
-      filtered = filtered.filter(m =>
-        (m.title || m.eventName).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (m.organizer || m.organizerName).toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [evRes, bkRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/v1/events?type=Meetup').catch(() => ({ data: [] })),
+        user ? axios.get('http://localhost:5000/api/v1/bookings', { withCredentials: true }).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+      ]);
+      const live = Array.isArray(evRes.data) ? evRes.data : evRes.data.data?.events || [];
+      const merged = [...live, ...PREDEFINED];
+      const unique = Array.from(new Map(merged.map(m => [m._id || m.id, m])).values());
+      setAll(unique);
+
+      const bkArr = Array.isArray(bkRes.data) ? bkRes.data : bkRes.data.data?.bookings || [];
+      const jMap = JSON.parse(localStorage.getItem('joinedMeetups') || '{}');
+      bkArr.forEach(b => { if (b.eventId) jMap[b.eventId._id || b.eventId.id] = true; });
+      setJoined(jMap);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-
-    if (filters.category !== 'All Categories') {
-      filtered = filtered.filter(m => m.category === filters.category);
-    }
-
-    if (filters.date !== 'All Dates') {
-      const today = new Date();
-      filtered = filtered.filter(m => {
-        const eventDate = new Date(m.date || m.startDate);
-        if (filters.date === 'Today') {
-          return eventDate.toDateString() === today.toDateString();
-        } else if (filters.date === 'Tomorrow') {
-          const tomorrow = new Date(today);
-          tomorrow.setDate(today.getDate() + 1);
-          return eventDate.toDateString() === tomorrow.toDateString();
-        } else if (filters.date === 'This Month') {
-          return (
-            eventDate.getMonth() === today.getMonth() &&
-            eventDate.getFullYear() === today.getFullYear()
-          );
-        }
-        return true;
-      });
-    }
-
-    if (filters.price !== 'Price - Any') {
-      filtered = filtered.filter(m => {
-        if (filters.price === 'Free') return (m.price === 0 || m.ticketType === 'Free');
-        if (filters.price === 'Paid') return (m.price > 0 || m.ticketType === 'Paid');
-        return true;
-      });
-    }
-
-    setFilteredMeetups(filtered);
-  }, [filters, meetups, searchTerm]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
   };
+
+  const filtered = useMemo(() => {
+    let list = all;
+    if (search) list = list.filter(m => (m.eventName || m.title || '').toLowerCase().includes(search.toLowerCase()));
+    if (category !== 'All') list = list.filter(m => m.category === category);
+    if (price === 'Free') list = list.filter(m => m.ticketType === 'Free' || m.ticketPrice === 0);
+    if (price === 'Paid') list = list.filter(m => m.ticketType === 'Paid' || m.ticketPrice > 0);
+    return list;
+  }, [all, search, category, price]);
 
   const handleJoin = async (id) => {
-    if (!user) {
-      alert("Please login to register for events.");
-      return;
-    }
-
+    if (!user) { toast.warning('Please login to join a meetup.'); navigate('/login'); return; }
     try {
-      const response = await axios.post('http://localhost:5000/api/book', {
-        eventId: id
-      }, { withCredentials: true });
-
-      if (response.status === 201) {
-        setJoinedEvents(prev => ({ ...prev, [id]: true }));
-        const current = JSON.parse(localStorage.getItem('joinedMeetups')) || {};
-        localStorage.setItem('joinedMeetups', JSON.stringify({ ...current, [id]: true }));
-        alert("Registration Successful!");
-      }
-    } catch (error) {
-      console.error('Registration failed:', error);
-      const msg = error.response?.data?.error || "Registration failed. Please try again.";
-      alert(msg);
+      await axios.post('http://localhost:5000/api/v1/bookings', { eventId: id }, { withCredentials: true });
+      const next = { ...joined, [id]: true };
+      setJoined(next);
+      localStorage.setItem('joinedMeetups', JSON.stringify(next));
+      toast.success('You joined the meetup!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not join meetup');
     }
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setFilters({
-      category: 'All Categories',
-      date: 'All Dates',
-      price: 'Price - Any'
-    });
-  };
-
-  if (selectedEvent) {
-    return (
-      <div className="section-container">
-        <button
-          className="btn-secondary mb-8 inline-flex items-center gap-2"
-          onClick={() => setSelectedEvent(null)}
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Meetups
-        </button>
-        <EventDetail event={selectedEvent} onClose={() => setSelectedEvent(null)} />
-      </div>
-    );
-  }
+  const reset = () => { setSearch(''); setCategory('All'); setPrice('All Prices'); };
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Meetups"
-        subtitle="Connect with like-minded people in your city. Casual gatherings, networking, and fun."
-      />
-
-      {/* Filter Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-lg">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <input
-            type="text"
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white"
-            placeholder="Search meetups..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="flex gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-slate-400">
-            <Filter className="h-4 w-4 text-indigo-500" />
-            <select
-              className="bg-transparent text-sm focus:outline-none cursor-pointer"
-              name="category"
-              value={filters.category}
-              onChange={handleFilterChange}
-            >
-              <option className="bg-slate-950">All Categories</option>
-              <option className="bg-slate-950">Networking</option>
-              <option className="bg-slate-950">Social</option>
-              <option className="bg-slate-950">Hobbies</option>
-              <option className="bg-slate-950">Tech</option>
-            </select>
+    <div className="page-wrap space-y-8">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+            <Users className="w-4 h-4 text-sky-400" />
           </div>
-
-          <select
-            className="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-sm focus:outline-none cursor-pointer text-slate-400"
-            name="date"
-            value={filters.date}
-            onChange={handleFilterChange}
-          >
-            <option className="bg-slate-950">All Dates</option>
-            <option className="bg-slate-950">Today</option>
-            <option className="bg-slate-950">Tomorrow</option>
-            <option className="bg-slate-950">This Month</option>
-          </select>
-
-          <button
-            onClick={resetFilters}
-            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-slate-400"
-            title="Reset Filters"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
+          <span className="badge badge-neutral">Core Module</span>
         </div>
+        <h1 className="font-display text-3xl font-bold text-text-1">Meetups</h1>
+        <p className="text-text-2 mt-1.5 max-w-lg">
+          Hyper-local community gatherings across technology, art, business, and culture. Find your people.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 gap-4">
-          <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
-          <p className="text-slate-400 animate-pulse">Loading meetups...</p>
+      {/* Filters */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="input pl-10 w-full" placeholder="Search meetups..."
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-3">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <select value={price} onChange={e => setPrice(e.target.value)} className="input w-full sm:w-40 cursor-pointer">
+            <option>All Prices</option>
+            <option>Free</option>
+            <option>Paid</option>
+          </select>
+          <button onClick={reset} className="btn-secondary btn-md shrink-0">
+            <RotateCcw className="w-4 h-4" />
+          </button>
         </div>
-      ) : filteredMeetups.length === 0 ? (
-        <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
-          <Search className="h-12 w-12 text-slate-700 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">No meetups found</h3>
-          <p className="text-slate-400">Try adjusting your filters or search terms.</p>
-          <button onClick={resetFilters} className="bg-slate-800 text-white px-6 py-2 rounded-lg mt-6">Clear All Filters</button>
+
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map(c => (
+            <button
+              key={c} onClick={() => setCategory(c)}
+              className={`chip ${category === c ? 'chip-active' : 'chip-idle'}`}
+            >{c}</button>
+          ))}
+        </div>
+        <div className="text-xs text-text-3">{filtered.length} meetup{filtered.length !== 1 ? 's' : ''} found</div>
+      </div>
+
+      {/* Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-72" />)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state card">
+          <div className="empty-icon"><Users className="w-8 h-8" /></div>
+          <div>
+            <div className="font-semibold text-text-1 mb-1">No meetups found</div>
+            <div className="text-sm text-text-2">Try different filters or check back soon.</div>
+          </div>
+          <button onClick={reset} className="btn-secondary btn-md">
+            <RotateCcw className="w-4 h-4" /> Clear Filters
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMeetups.map(meetup => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 grid-fade">
+          {filtered.map(m => (
             <EventCard
-              key={meetup.id || meetup._id}
-              event={meetup}
-              isRegistered={joinedEvents[meetup.id || meetup._id]}
+              key={m._id}
+              event={{ ...m, title: m.eventName || m.title, category: m.category || 'Meetup', location: m.venueName || m.location }}
+              isRegistered={joined[m._id]}
               onRegister={handleJoin}
-              onClick={setSelectedEvent}
-            // onDelete={handleDelete} // This prop was not defined in the original code, removing it.
             />
           ))}
         </div>
@@ -268,5 +167,3 @@ function Meetups() {
     </div>
   );
 }
-
-export default Meetups;

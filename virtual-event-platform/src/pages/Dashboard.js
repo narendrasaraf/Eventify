@@ -2,482 +2,387 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-    LayoutDashboard,
-    Ticket,
-    Loader2,
-    Mail,
-    User as UserIcon,
-    Shield,
-    LogOut,
-    Plus,
-    Sparkles,
-    Calendar,
-    Clock,
-    X,
-    Check
+  Loader2, CalendarDays, Ticket, Sparkles,
+  Plus, User as UserIcon, Shield, Mail,
+  BarChart2, TrendingUp, Clock, ArrowRight,
+  X, ChevronRight,
 } from 'lucide-react';
 import EventCard from '../components/EventCard';
+import { toast } from 'react-toastify';
 
-function Dashboard() {
-    const [activeTab, setActiveTab] = useState('registered');
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(null);
-    const navigate = useNavigate();
-
-    // AI Schedule Optimizer State
-    const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
-    const [selectedEvent, setSelectedEvent] = useState(null);
-    const [scheduleInput, setScheduleInput] = useState("");
-    const [startTime, setStartTime] = useState("09:00 AM");
-    const [isOptimizing, setIsOptimizing] = useState(false);
-    const [optimizedSchedule, setOptimizedSchedule] = useState(null);
-
-    // AI Dashboard Insights State
-    const [insightQuery, setInsightQuery] = useState("");
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [insightResult, setInsightResult] = useState(null);
-
-    useEffect(() => {
-        fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
-
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const [userRes, eventsRes] = await Promise.all([
-                axios.get('http://localhost:5000/auth/me', { withCredentials: true }),
-                activeTab === 'registered'
-                    ? axios.get('http://localhost:5000/api/my-bookings', { withCredentials: true })
-                    : axios.get('http://localhost:5000/api/events', { withCredentials: true })
-            ]);
-
-            setUser(userRes.data.user);
-
-            const bookingsArray = Array.isArray(eventsRes.data)
-                ? eventsRes.data
-                : eventsRes.data.data?.bookings || [];
-
-            const eventsArray = Array.isArray(eventsRes.data)
-                ? eventsRes.data
-                : eventsRes.data.data?.events || [];
-
-            if (activeTab === 'registered') {
-                setEvents(bookingsArray.map(b => b.eventId).filter(e => e !== null));
-            } else {
-                // filter for created by user
-                setEvents(eventsArray.filter(e => e.organizerEmail === userRes.data.user.email));
-            }
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
-            if (error.response?.status === 401) navigate('/login');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            await axios.post('http://localhost:5000/auth/logout', {}, { withCredentials: true });
-            localStorage.removeItem('user');
-            navigate('/login');
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
-    };
-
-    const handleOptimize = async (e) => {
-        if (e) e.preventDefault();
-        if (!scheduleInput.trim() || isOptimizing) return;
-
-        setIsOptimizing(true);
-        setOptimizedSchedule(null);
-
-        // Parse line-by-line topics
-        const topics = scheduleInput
-            .split("\n")
-            .map((line) => line.trim())
-            .filter((line) => line.length > 0);
-
-        try {
-            const response = await axios.post("http://localhost:5000/api/v1/intelligence/schedule-optimizer", {
-                topics,
-                constraints: {
-                    startTime,
-                    eventName: selectedEvent?.eventName
-                }
-            }, { withCredentials: true });
-
-            if (response.data?.data?.schedule) {
-                setOptimizedSchedule(response.data.data.schedule);
-            }
-        } catch (err) {
-            alert("Failed to optimize schedule: " + (err.response?.data?.message || err.message));
-        } finally {
-            setIsOptimizing(false);
-        }
-    };
-
-    if (loading && !user) {
-        return (
-            <div className="flex flex-col items-center justify-center py-32 gap-4">
-                <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
-                <p className="text-slate-400 animate-pulse">Loading dashboard...</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-12 relative">
-            {/* Profile Overview */}
-            <div className="card bg-slate-900/50 border-slate-800 p-8 rounded-[32px] overflow-hidden relative group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-20 -mt-20" />
-
-                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 p-1">
-                            <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center overflow-hidden">
-                                {user?.profilePicture ? (
-                                    <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <UserIcon className="h-10 w-10 text-indigo-400" />
-                                )}
-                            </div>
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 bg-emerald-500 h-6 w-6 rounded-full border-4 border-slate-900 flex items-center justify-center" title="Active">
-                            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                        </div>
-                    </div>
-
-                    <div className="flex-1 text-center md:text-left">
-                        <h1 className="text-3xl font-bold text-white mb-2">{user?.name}</h1>
-                        <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <Mail className="h-4 w-4" />
-                                <span>{user?.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider">
-                                <Shield className="h-3.5 w-3.5" />
-                                {user?.authProvider} account
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 w-full md:w-auto">
-                        <Link to="/co-creator" className="btn-primary flex items-center justify-center gap-2 px-8">
-                            <Plus className="h-4 w-4" /> Create New Event
-                        </Link>
-                        <button onClick={handleLogout} className="flex items-center justify-center gap-2 text-slate-400 hover:text-red-400 transition-colors text-sm font-medium">
-                            <LogOut className="h-4 w-4" /> Logout Session
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* AI Operations Assistant */}
-            <div className="card bg-slate-900/40 border-slate-800/80 p-8 rounded-[32px] space-y-6">
-                <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-indigo-400" />
-                    <h2 className="text-xl font-bold text-white">AI Operations Assistant</h2>
-                </div>
-                <p className="text-sm text-text-secondary">
-                    Ask questions about attendee ticket sales, categories, venue configurations, or generate business recommendations.
-                </p>
-
-                <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!insightQuery.trim() || isAnalyzing) return;
-                    setIsAnalyzing(true);
-                    setInsightResult(null);
-                    try {
-                        const response = await axios.post("http://localhost:5000/api/v1/intelligence/dashboard-insights", {
-                            query: insightQuery
-                        }, { withCredentials: true });
-                        if (response.data?.data?.insights) {
-                            setInsightResult(response.data.data.insights);
-                        }
-                    } catch (err) {
-                        alert("Failed to analyze metrics: " + (err.response?.data?.message || err.message));
-                    } finally {
-                        setIsAnalyzing(false);
-                    }
-                }} className="flex gap-2">
-                    <input
-                        type="text"
-                        placeholder="e.g. Which of my event categories has generated the most ticket sales?"
-                        value={insightQuery}
-                        onChange={(e) => setInsightQuery(e.target.value)}
-                        className="flex-1 input-field py-3 text-sm"
-                        required
-                    />
-                    <button
-                        type="submit"
-                        disabled={isAnalyzing}
-                        className="btn-primary flex items-center gap-2 px-6 py-3 font-bold shadow-lg shadow-indigo-600/20"
-                    >
-                        {isAnalyzing ? (
-                            <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
-                        ) : (
-                            <><Sparkles className="h-4 w-4 text-indigo-200" /> Ask AI</>
-                        )}
-                    </button>
-                </form>
-
-                {insightResult && (
-                    <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-6 relative animate-in fade-in zoom-in-95 duration-300">
-                        <button
-                            onClick={() => { setInsightResult(null); setInsightQuery(""); }}
-                            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
-                        <div className="prose prose-invert max-w-none">
-                            {renderMarkdown(insightResult)}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Event Management Section */}
-            <div className="space-y-8">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex gap-1 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-full md:w-fit">
-                        {[
-                            { id: 'registered', label: 'Registered Events', icon: Ticket },
-                            { id: 'created', label: 'Organized Events', icon: LayoutDashboard }
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${activeTab === tab.id
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                        : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    {tab.label}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-32 gap-4">
-                        <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
-                        <p className="text-slate-400 animate-pulse">Fetching events...</p>
-                    </div>
-                ) : events.length === 0 ? (
-                    <div className="text-center py-32 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800 flex flex-col items-center">
-                        <div className="bg-slate-900 h-20 w-20 rounded-3xl flex items-center justify-center mb-6 border border-slate-800">
-                            {activeTab === 'registered' ? <Ticket className="h-10 w-10 text-slate-700" /> : <LayoutDashboard className="h-10 w-10 text-slate-700" />}
-                        </div>
-                        <h3 className="text-2xl font-bold text-white mb-2">
-                            {activeTab === 'registered' ? "No registrations yet" : "No events created"}
-                        </h3>
-                        <p className="text-slate-400 max-w-md mx-auto mb-8 font-medium">
-                            {activeTab === 'registered'
-                                ? "Start your journey by discovering amazing webinars, conferences, and meetups happening around you."
-                                : "Ready to host? Create your first event and start building your community today."}
-                        </p>
-                        {activeTab === 'registered' ? (
-                            <Link to="/discover" className="btn-primary px-8">Browse Events</Link>
-                        ) : (
-                            <Link to="/co-creator" className="btn-primary px-8">Get Started</Link>
-                        )}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {events.map(event => (
-                            <div key={event._id || event.id} className="relative group/card flex flex-col">
-                                <EventCard
-                                    event={event}
-                                    isRegistered={activeTab === 'registered'}
-                                    onClick={(ev) => navigate(`/event/${ev._id || ev.id}`)}
-                                />
-                                {activeTab === 'created' && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedEvent(event);
-                                            setOptimizedSchedule(null);
-                                            setScheduleInput("");
-                                            setIsOptimizerOpen(true);
-                                        }}
-                                        className="mt-3 py-2 px-4 rounded-xl border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/20 text-indigo-400 font-bold text-xs flex items-center justify-center gap-2 transition-all w-full"
-                                    >
-                                        <Sparkles className="h-3.5 w-3.5" /> Optimize Schedule
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* AI Schedule Optimizer Modal */}
-            {isOptimizerOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-                    <div className="w-full max-w-2xl card bg-slate-900 border border-slate-800 shadow-2xl p-6 sm:p-8 rounded-[24px] max-h-[90vh] overflow-y-auto space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="h-5 w-5 text-indigo-400" />
-                                <h3 className="text-xl font-bold text-white">AI Timetable Planner</h3>
-                            </div>
-                            <button
-                                onClick={() => setIsOptimizerOpen(false)}
-                                className="text-slate-500 hover:text-white transition-colors"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-text-secondary">
-                                Generate a conflict-free session plan for <span className="text-indigo-400 font-bold">"{selectedEvent?.eventName}"</span>.
-                            </p>
-                        </div>
-
-                        {!optimizedSchedule ? (
-                            <form onSubmit={handleOptimize} className="space-y-6">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
-                                        Session Topics & Speakers (one per line)
-                                    </label>
-                                    <textarea
-                                        value={scheduleInput}
-                                        onChange={(e) => setScheduleInput(e.target.value)}
-                                        className="input-field w-full min-h-[150px] py-3 text-sm"
-                                        placeholder="e.g.&#10;Keynote: State of Web 2026 by Jane Doe (45 mins)&#10;Panel: The Future of AI in Dev (60 mins)&#10;Break: Lunch and Networking (60 mins)&#10;Workshop: building with Gemini API (90 mins)"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
-                                            Start Time
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={startTime}
-                                            onChange={(e) => setStartTime(e.target.value)}
-                                            className="input-field w-full text-sm"
-                                            placeholder="09:00 AM"
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={isOptimizing}
-                                    className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 font-bold shadow-lg shadow-indigo-600/20"
-                                >
-                                    {isOptimizing ? (
-                                        <><Loader2 className="h-5 w-5 animate-spin" /> Sequencing Agenda...</>
-                                    ) : (
-                                        <><Sparkles className="h-5 w-5 text-indigo-200" /> Generate Optimized Timeline</>
-                                    )}
-                                </button>
-                            </form>
-                        ) : (
-                            <div className="space-y-6 animate-in zoom-in-95 duration-300">
-                                <div className="space-y-4">
-                                    {optimizedSchedule.tracks.map((track, tIdx) => (
-                                        <div key={tIdx} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
-                                            <h4 className="font-bold text-base text-indigo-400 flex items-center gap-2">
-                                                <Calendar className="h-4.5 w-4.5" /> {track.trackName}
-                                            </h4>
-                                            
-                                            <div className="space-y-3">
-                                                {track.slots.map((slot, sIdx) => (
-                                                    <div key={sIdx} className="flex gap-4 border-l-2 border-indigo-600/50 pl-4 py-1">
-                                                        <div className="w-40 shrink-0 text-xs text-slate-400 flex items-center gap-1.5">
-                                                            <Clock className="h-3.5 w-3.5 text-indigo-400" />
-                                                            {slot.time}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-white">{slot.sessionTitle}</p>
-                                                            {slot.speaker && (
-                                                                <p className="text-xs text-text-secondary mt-0.5">by {slot.speaker}</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setOptimizedSchedule(null)}
-                                        className="btn-secondary flex-1 py-3 text-sm font-bold"
-                                    >
-                                        Re-draft Agenda
-                                    </button>
-                                    <button
-                                        onClick={() => setIsOptimizerOpen(false)}
-                                        className="btn-primary flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2"
-                                    >
-                                        <Check className="h-4 w-4" /> Save Schedule
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+// ── STAT CARD ─────────────────────────────────────────────
+function StatCard({ icon: Icon, label, value, trend, color }) {
+  return (
+    <div className="card flex items-start gap-4">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-semibold text-text-2 uppercase tracking-wider mb-1">{label}</div>
+        <div className="font-display text-2xl font-bold text-text-1">{value}</div>
+        {trend && <div className="text-xs text-success mt-0.5 flex items-center gap-1"><TrendingUp className="w-3 h-3" />{trend}</div>}
+      </div>
+    </div>
+  );
 }
 
-const renderMarkdown = (text) => {
-    if (!text) return null;
-    return text.split("\n").map((line, index) => {
-        // Bullet list
-        if (line.startsWith("- ") || line.startsWith("* ")) {
-            return (
-                <li key={index} className="text-slate-300 text-sm ml-4 list-disc mt-1">
-                    {parseBoldText(line.substring(2))}
-                </li>
-            );
-        }
-        // Headings
-        if (line.startsWith("### ")) {
-            return <h4 key={index} className="text-base font-bold text-indigo-400 mt-4 mb-2">{line.substring(4)}</h4>;
-        }
-        if (line.startsWith("## ")) {
-            return <h3 key={index} className="text-lg font-bold text-white mt-6 mb-3">{line.substring(3)}</h3>;
-        }
-        if (line.startsWith("# ")) {
-            return <h2 key={index} className="text-xl font-black text-white mt-8 mb-4 border-b border-slate-800 pb-2">{line.substring(2)}</h2>;
-        }
-        // Plain text line
-        return <p key={index} className="text-slate-400 text-sm leading-relaxed mt-2 min-h-[1em]">{parseBoldText(line)}</p>;
-    });
-};
+// ── AI INSIGHT PANEL ──────────────────────────────────────
+function AIInsightPanel() {
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
 
-const parseBoldText = (text) => {
-    // fallback or standard regex split for bolding **word**
-    const boldRegex = /\*\*(.*?)\*\*/g;
-    const items = [];
-    let lastIndex = 0;
-    let match;
-    while ((match = boldRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-            items.push(text.substring(lastIndex, match.index));
-        }
-        items.push(<strong key={match.index} className="text-white font-extrabold">{match[1]}</strong>);
-        lastIndex = boldRegex.lastIndex;
+  const run = async (e) => {
+    e.preventDefault();
+    if (!query.trim() || loading) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await axios.post(
+        'http://localhost:5000/api/v1/intelligence/dashboard-insights',
+        { query },
+        { withCredentials: true }
+      );
+      if (res.data?.data?.insights) setResult(res.data.data.insights);
+    } catch (err) {
+      setResult('Failed to fetch insights. Make sure the backend is running.');
+    } finally {
+      setLoading(false);
     }
-    if (lastIndex < text.length) {
-        items.push(text.substring(lastIndex));
-    }
-    return items.length > 0 ? items : text;
-};
+  };
 
-export default Dashboard;
+  const samples = [
+    'How many events am I registered for?',
+    'What upcoming events should I attend?',
+    'Give me networking tips for tech conferences',
+  ];
+
+  return (
+    <div className="card space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-brand" />
+        </div>
+        <div>
+          <div className="font-semibold text-text-1 text-sm">AI Assistant</div>
+          <div className="text-xs text-text-2">Ask anything about your events</div>
+        </div>
+      </div>
+
+      <form onSubmit={run} className="flex gap-2">
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Ask a question..."
+          className="input flex-1"
+        />
+        <button type="submit" disabled={loading} className="btn-primary btn-md shrink-0">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+        </button>
+      </form>
+
+      {/* Sample prompts */}
+      {!result && (
+        <div className="flex flex-wrap gap-2">
+          {samples.map(s => (
+            <button
+              key={s}
+              onClick={() => setQuery(s)}
+              className="text-xs px-2.5 py-1 rounded-full bg-surface-2 hover:bg-surface-3 text-text-2 hover:text-text-1 border border-border transition-all"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {result && (
+        <div className="bg-surface-2 rounded-xl p-4 text-sm text-text-2 leading-relaxed border border-border relative">
+          <button
+            onClick={() => setResult(null)}
+            className="absolute top-3 right-3 text-text-3 hover:text-text-2"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          {result}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── OPTIMIZER MODAL ───────────────────────────────────────
+function OptimizerModal({ event, onClose }) {
+  const [topics, setTopics] = useState('');
+  const [startTime, setStartTime] = useState('09:00 AM');
+  const [loading, setLoading] = useState(false);
+  const [schedule, setSchedule] = useState(null);
+
+  const run = async (e) => {
+    e.preventDefault();
+    if (!topics.trim() || loading) return;
+    setLoading(true);
+    setSchedule(null);
+    try {
+      const topicList = topics.split('\n').map(l => l.trim()).filter(Boolean);
+      const res = await axios.post(
+        'http://localhost:5000/api/v1/intelligence/schedule-optimizer',
+        { topics: topicList, constraints: { startTime, eventName: event?.eventName || event?.title } },
+        { withCredentials: true }
+      );
+      if (res.data?.data?.schedule) setSchedule(res.data.data.schedule);
+    } catch (err) {
+      alert('Failed to optimize: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-panel max-w-2xl">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <div className="font-display text-lg font-bold text-text-1">AI Schedule Optimizer</div>
+            <div className="text-sm text-text-2 mt-0.5">{event?.eventName || event?.title}</div>
+          </div>
+          <button onClick={onClose} className="btn-ghost btn-sm">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={run} className="space-y-4">
+          <div>
+            <label className="label">Topics / Sessions (one per line)</label>
+            <textarea
+              value={topics}
+              onChange={e => setTopics(e.target.value)}
+              rows={5}
+              placeholder={'Keynote: The Future of AI\nBreak: Networking\nWorkshop: Building ML Pipelines'}
+              className="input font-mono text-xs"
+            />
+          </div>
+          <div>
+            <label className="label">Start Time</label>
+            <input
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              className="input"
+              placeholder="09:00 AM"
+            />
+          </div>
+          <button type="submit" disabled={loading} className="btn-primary btn-md w-full">
+            {loading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" />Optimizing...</>
+            ) : (
+              <><Sparkles className="w-4 h-4" />Optimize Schedule</>
+            )}
+          </button>
+        </form>
+
+        {schedule && (
+          <div className="mt-5 bg-surface-2 rounded-xl p-4 space-y-2 border border-border">
+            <div className="text-xs font-semibold text-text-2 uppercase tracking-wider mb-3">Optimized Schedule</div>
+            {Array.isArray(schedule) ? (
+              schedule.map((item, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm">
+                  <span className="text-brand font-mono text-xs pt-0.5 shrink-0 w-20">{item.time}</span>
+                  <span className="text-text-1">{item.topic || item.title || item.session}</span>
+                </div>
+              ))
+            ) : (
+              <pre className="text-text-2 text-xs whitespace-pre-wrap">{JSON.stringify(schedule, null, 2)}</pre>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN DASHBOARD ────────────────────────────────────────
+export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState('registered');
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [optimizerEvent, setOptimizerEvent] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => { fetchData(); }, [activeTab]); // eslint-disable-line
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [userRes, eventsRes] = await Promise.all([
+        axios.get('http://localhost:5000/auth/me', { withCredentials: true }),
+        activeTab === 'registered'
+          ? axios.get('http://localhost:5000/api/my-bookings', { withCredentials: true })
+          : axios.get('http://localhost:5000/api/events', { withCredentials: true }),
+      ]);
+
+      const u = userRes.data.user;
+      setUser(u);
+
+      const raw = Array.isArray(eventsRes.data)
+        ? eventsRes.data
+        : eventsRes.data.data?.bookings || eventsRes.data.data?.events || [];
+
+      if (activeTab === 'registered') {
+        setEvents(raw.map(b => b.eventId || b).filter(Boolean));
+      } else {
+        setEvents(raw.filter(e => e.organizerEmail === u.email));
+      }
+    } catch (err) {
+      if (err.response?.status === 401) navigate('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this event?')) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/v1/events/${id}`, { withCredentials: true });
+      setEvents(prev => prev.filter(e => (e._id || e.id) !== id));
+      toast.success('Event template permanently deleted.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete event template.');
+    }
+  };
+
+  if (!user && loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen gap-3">
+        <Loader2 className="w-6 h-6 text-brand animate-spin" />
+        <span className="text-text-2 text-sm">Loading workspace...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-wrap space-y-8">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-text-1">
+            {user?.name ? `Hello, ${user.name.split(' ')[0]} 👋` : 'Dashboard'}
+          </h1>
+          <p className="text-sm text-text-2 mt-1">Here's what's happening with your events.</p>
+        </div>
+        <Link to="/create-event" className="btn-primary btn-md shrink-0">
+          <Plus className="w-4 h-4" /> Create Event
+        </Link>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Ticket}       label="Registered"   value={activeTab === 'registered' ? events.length : '—'} color="bg-brand/10 text-brand" />
+        <StatCard icon={CalendarDays} label="My Events"    value={activeTab === 'my' ? events.length : '—'}          color="bg-violet-500/10 text-violet-400" />
+        <StatCard icon={BarChart2}    label="Views"        value="—"                                                  color="bg-emerald-500/10 text-emerald-400" />
+        <StatCard icon={Clock}        label="Hours saved"  value="—"                                                  color="bg-amber-500/10 text-amber-400" />
+      </div>
+
+      {/* AI Panel */}
+      <AIInsightPanel />
+
+      {/* User profile strip */}
+      {user && (
+        <div className="card flex flex-col sm:flex-row items-center gap-5">
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-full bg-surface-2 border-2 border-border flex items-center justify-center overflow-hidden">
+              {user.profilePicture
+                ? <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+                : <UserIcon className="w-7 h-7 text-text-3" />
+              }
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-surface" />
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <div className="font-semibold text-text-1">{user.name}</div>
+            <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 mt-1.5">
+              <span className="flex items-center gap-1.5 text-xs text-text-2"><Mail className="w-3.5 h-3.5" />{user.email}</span>
+              <span className="badge badge-brand"><Shield className="w-3 h-3" />{user.authProvider || 'local'}</span>
+            </div>
+          </div>
+          <Link to="/profile" className="btn-secondary btn-sm shrink-0">
+            View Profile <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Events section */}
+      <div>
+        {/* Tabs */}
+        <div className="flex items-center gap-1 p-1 bg-surface-2 rounded-xl w-fit mb-6 border border-border">
+          {[
+            { id: 'registered', label: 'Registered Events' },
+            { id: 'my',         label: 'My Events' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-surface text-text-1 border border-border shadow-sm'
+                  : 'text-text-2 hover:text-text-1'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1,2,3].map(i => <div key={i} className="skeleton h-64" />)}
+          </div>
+        ) : events.length === 0 ? (
+          <div className="empty-state card">
+            <div className="empty-icon">
+              <CalendarDays className="w-8 h-8" />
+            </div>
+            <div>
+              <div className="font-semibold text-text-1 mb-1">
+                {activeTab === 'registered' ? 'No registered events yet' : 'No events created yet'}
+              </div>
+              <div className="text-sm text-text-2">
+                {activeTab === 'registered'
+                  ? 'Browse events and register to see them here.'
+                  : 'Use the AI Co-Creator to build your first event.'}
+              </div>
+            </div>
+            <Link
+              to={activeTab === 'registered' ? '/discover' : '/co-creator'}
+              className="btn-primary btn-md"
+            >
+              {activeTab === 'registered' ? 'Browse Events' : 'Create with AI'}{' '}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 grid-fade">
+            {events.map(event => (
+              <EventCard
+                key={event._id}
+                event={event}
+                isRegistered={activeTab === 'registered'}
+                onDelete={activeTab === 'my' ? handleDelete : undefined}
+                onClick={(ev) => navigate(`/event/${ev._id || ev.id}`)}
+                onOptimize={activeTab === 'my' ? (ev) => setOptimizerEvent(ev) : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Schedule Optimizer Modal */}
+      {optimizerEvent && (
+        <OptimizerModal
+          event={optimizerEvent}
+          onClose={() => setOptimizerEvent(null)}
+        />
+      )}
+    </div>
+  );
+}
