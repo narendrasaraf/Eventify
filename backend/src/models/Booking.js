@@ -17,7 +17,17 @@ const bookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['Confirmed', 'Cancelled', 'Pending'],
-      default: 'Confirmed',
+      default: 'Pending',
+    },
+    bookingStatus: {
+      type: String,
+      enum: ['REGISTERED', 'CONFIRMED', 'CANCELLED'],
+      default: 'REGISTERED',
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['PENDING', 'PAID', 'FAILED'],
+      default: 'PENDING',
     },
     ticketNumber: {
       type: String,
@@ -33,6 +43,14 @@ const bookingSchema = new mongoose.Schema(
     },
     paymentOrderId: {
       type: String, // Razorpay order ID
+      default: '',
+    },
+    orderId: {
+      type: String, // Razorpay order ID
+      default: '',
+    },
+    signature: {
+      type: String, // Razorpay signature
       default: '',
     },
     bookingDate: {

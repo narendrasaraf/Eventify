@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'organizer', 'admin'],
+      enum: ['user', 'organizer', 'admin', 'USER', 'ADMIN', 'ORGANIZER'],
       default: 'user',
     },
     phoneNumber: {
@@ -50,6 +50,22 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'blocked'],
+      default: 'active',
+    },
+    blocked: {
+      type: Boolean,
+      default: false,
+    },
+    blockedAt: {
+      type: Date,
+    },
+    blockedReason: {
+      type: String,
+      default: '',
     },
     passwordResetToken: {
       type: String,

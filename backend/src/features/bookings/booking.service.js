@@ -18,14 +18,9 @@ const BookingService = {
       throw new AppError('This event is not available for booking', 400, 'EVENT_UNAVAILABLE');
     }
 
-    // Block direct booking of paid events (they must go through the payment/checkout flow)
-    if (event.ticketType === 'Paid' && event.ticketPrice > 0) {
-      throw new AppError('This is a paid event. Please complete payment to register.', 400, 'PAYMENT_REQUIRED');
-    }
-
     // Duplicate check (also enforced by DB unique index)
     const existing = await BookingRepository.findOne({ userId, eventId });
-    if (existing && existing.status !== 'Cancelled') {
+    if (existing && existing.bookingStatus !== 'CANCELLED' && existing.status !== 'Cancelled') {
       throw new AppError('You are already registered for this event', 409, 'ALREADY_BOOKED');
     }
 
@@ -37,7 +32,15 @@ const BookingService = {
       }
     }
 
-    const booking = await BookingRepository.create({ userId, eventId });
+    const isFree = event.ticketType === 'Free' || !event.ticketPrice || event.ticketPrice === 0;
+    const booking = await BookingRepository.create({
+      userId,
+      eventId,
+      bookingStatus: isFree ? 'CONFIRMED' : 'REGISTERED',
+      paymentStatus: isFree ? 'PAID' : 'PENDING',
+      status: isFree ? 'Confirmed' : 'Pending',
+      amountPaid: 0,
+    });
     logger.info(`Booking created: user ${userId} for event ${eventId} [${booking.ticketNumber}]`);
 
     // Auto-create notification for booking
@@ -45,8 +48,10 @@ const BookingService = {
       const Notification = require('../../models/Notification');
       await Notification.create({
         userId,
-        title: 'Booking Confirmed',
-        body: `Your ticket for "${event.eventName}" has been issued successfully. Access code: ${booking.ticketNumber}.`,
+        title: isFree ? 'Booking Confirmed' : 'Registration Received',
+        body: isFree
+          ? `Your ticket for "${event.eventName}" has been issued successfully. Access code: ${booking.ticketNumber}.`
+          : `Your registration for "${event.eventName}" is received. Please complete your payment of ₹${event.ticketPrice} to confirm your booking.`,
         type: 'success',
       });
     } catch (nErr) {

@@ -23,6 +23,7 @@ const intelligenceRoutes = require('./features/intelligence/intelligence.routes'
 const paymentRoutes = require('./features/payments/payment.routes');
 const meetingRoutes = require('./features/meetings/meeting.routes');
 const notificationRoutes = require('./features/notifications/notification.routes');
+const communityRoutes = require('./features/community/community.routes');
 
 // ─── Passport Strategy Config ────────────────────────────────────────────────
 const configurePassport = require('./config/passport');
@@ -103,6 +104,7 @@ app.use('/api/v1/intelligence', intelligenceRoutes);
 app.use('/api/v1/payments',     paymentRoutes);
 app.use('/api/v1/meetings',     meetingRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/community',     communityRoutes);
 
 // ─── Legacy Route Aliases (backward compat for existing frontend) ─────────────
 // These aliases allow the existing frontend to keep working without code changes.

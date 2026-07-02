@@ -88,12 +88,12 @@ const resolveRoute = (options = {}) => {
       }
     }
     // Default fallback to Gemini if model is unknown
-    return { provider: 'gemini', model: 'gemini-2.5-flash' };
+    return { provider: 'gemini', model: 'gemini-1.5-flash' };
   }
 
   // Use capability tag matching (default to chat speed)
   const capability = options.capability || 'chat';
-  const targetModel = modelRegistry.routingRules[capability] || 'gemini-2.5-flash';
+  const targetModel = modelRegistry.routingRules[capability] || 'gemini-1.5-flash';
   
   // Find which provider supports this resolved model
   for (const [providerName, providerConfig] of Object.entries(modelRegistry.providers)) {
@@ -102,7 +102,7 @@ const resolveRoute = (options = {}) => {
     }
   }
 
-  return { provider: 'gemini', model: 'gemini-2.5-flash' };
+  return { provider: 'gemini', model: 'gemini-1.5-flash' };
 };
 
 const AIGateway = {

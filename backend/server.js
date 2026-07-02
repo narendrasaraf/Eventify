@@ -10,12 +10,38 @@ const startServer = async () => {
   // Connect to MongoDB before accepting requests
   await connectDB();
 
-  const server = app.listen(config.port, () => {
+  const server = app.listen(config.port, async () => {
     logger.info(
       `Server running in ${config.env} mode on http://localhost:${config.port}`
     );
     logger.info(`API v1 available at http://localhost:${config.port}/api/v1`);
+
+    // Run Database Seeding
+    try {
+      const seedDatabase = require('./src/config/seed');
+      await seedDatabase();
+    } catch (seedErr) {
+      logger.error(`Seeding failed: ${seedErr.message}`);
+    }
   });
+
+  // Initialize Socket.IO
+  try {
+    const socketio = require('socket.io');
+    const io = socketio(server, {
+      cors: {
+        origin: config.frontend.url,
+        credentials: true,
+        methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+      }
+    });
+
+    const initCommunitySocket = require('./src/features/community/community.socket');
+    initCommunitySocket(io);
+    logger.info('Socket.IO community rooms attached.');
+  } catch (ioErr) {
+    logger.error(`Socket.IO setup error: ${ioErr.message}`);
+  }
 
   // ─── Graceful Shutdown ─────────────────────────────────────────────────────
   const shutdown = (signal) => {

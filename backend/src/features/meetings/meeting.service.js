@@ -62,19 +62,28 @@ const MeetingService = {
       throw new AppError('No online meeting configured for this event', 404, 'MEETING_NOT_CONFIGURED');
     }
 
-    // 1. Organizer always has access
-    if (event.createdBy.toString() === userId.toString()) {
-      return { ...meeting.toObject(), role: 'moderator' };
+    let booking = await Booking.findOne({ userId, eventId });
+
+    // 1. Auto-create a confirmed booking for the event organizer/creator if they don't have one
+    if (!booking && event.createdBy.toString() === userId.toString()) {
+      booking = await Booking.create({
+        userId,
+        eventId,
+        bookingStatus: 'CONFIRMED',
+        paymentStatus: 'PAID',
+        status: 'Confirmed',
+        amountPaid: 0,
+      });
     }
 
-    // 2. Check if user has registered / purchased ticket
-    const booking = await Booking.findOne({ userId, eventId });
-    if (!booking || booking.status !== 'Confirmed') {
+    // 2. Check if user has registered / purchased ticket and payment status is PAID and bookingStatus is CONFIRMED
+    if (!booking || booking.paymentStatus !== 'PAID' || booking.bookingStatus !== 'CONFIRMED') {
       throw new AppError('You must register and complete payment to join this meeting', 403, 'ADMISSION_REQUIRED');
     }
 
-    // Attendee has access
-    return { ...meeting.toObject(), role: 'participant' };
+    // Determine role (organizer has moderator role, attendee has participant role)
+    const role = event.createdBy.toString() === userId.toString() ? 'moderator' : 'participant';
+    return { ...meeting.toObject(), role };
   },
 
   /**
