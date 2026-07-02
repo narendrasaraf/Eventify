@@ -76,7 +76,7 @@ const runEvaluation = async () => {
       }
 
       const duration = Date.now() - startTime;
-      const txCost = CostTracker.trackCost(scenario.type === 'structured' ? 'gemini-1.5-flash' : 'gemini-1.5-flash', usage);
+      const txCost = CostTracker.trackCost(scenario.type === 'structured' ? 'gemini-2.5-flash' : 'gemini-2.5-flash', usage);
 
       if (passed) passedCount++;
 

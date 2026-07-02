@@ -3,42 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from './Sidebar';
 import { MessageSquare, Send, X, Loader2, Sparkles } from 'lucide-react';
+import FormattedMarkdown from './FormattedMarkdown';
 
 // Pages that don't use the sidebar shell
 const BARE_PATHS = ['/', '/login', '/signup', '/terms', '/privacy', '/pricing', '/about'];
-
-const renderMessageText = (text) => {
-  if (!text) return '';
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = linkRegex.exec(text)) !== null) {
-    const matchIndex = match.index;
-    if (matchIndex > lastIndex) {
-      parts.push(text.substring(lastIndex, matchIndex));
-    }
-    const linkText = match[1];
-    const linkUrl = match[2];
-    parts.push(
-      <a
-        key={matchIndex}
-        href={linkUrl}
-        className="text-indigo-400 hover:text-indigo-300 underline font-semibold transition-colors"
-      >
-        {linkText}
-      </a>
-    );
-    lastIndex = linkRegex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : text;
-};
 
 function GlobalChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -143,9 +111,12 @@ function GlobalChatbot() {
                       ? 'bg-indigo-600 text-white font-medium rounded-tr-none'
                       : 'bg-slate-900 text-slate-300 border border-slate-800 rounded-tl-none'
                   }`}
-                  style={{ whiteSpace: 'pre-line' }}
                 >
-                  {renderMessageText(m.text)}
+                  {m.sender === 'user' ? (
+                    <div style={{ whiteSpace: 'pre-line' }}>{m.text}</div>
+                  ) : (
+                    <FormattedMarkdown text={m.text} />
+                  )}
                 </div>
               </div>
             ))}
@@ -199,6 +170,18 @@ export default function Layout({ children }) {
     }
   }, [location.pathname]);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   const handleLogout = async () => {
     try {
       await axios.post('http://localhost:5000/auth/logout', {}, { withCredentials: true });
@@ -210,19 +193,33 @@ export default function Layout({ children }) {
 
   if (isBare) {
     return (
-      <>
-        {children}
+      <div className="min-h-screen bg-canvas text-text-1 relative overflow-hidden font-sans selection:bg-brand/30 selection:text-white">
+        {/* Background ambient glowing gradient blobs */}
+        <div className="absolute top-[-15%] left-[-15%] w-[65%] h-[65%] bg-brand/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-[-15%] right-[-15%] w-[65%] h-[65%] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none" />
+        
+        <div className="relative z-10">{children}</div>
         <GlobalChatbot />
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      <Sidebar user={user} onLogout={handleLogout} />
+    <div className="flex min-h-screen bg-canvas text-text-1 relative overflow-hidden font-sans selection:bg-brand/30 selection:text-white">
+      {/* Background ambient glowing gradient blobs */}
+      <div className="absolute top-[-15%] left-[-15%] w-[60%] h-[60%] bg-brand/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-15%] w-[60%] h-[60%] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-[40%] left-[30%] w-[35%] h-[35%] bg-blue-500/5 rounded-full blur-[140px] pointer-events-none" />
+
+      <Sidebar 
+        user={user} 
+        onLogout={handleLogout} 
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={toggleSidebar}
+      />
 
       {/* Main content area — offset by sidebar width */}
-      <main className="flex-1 min-h-screen lg:ml-56 transition-all duration-300 pt-14 lg:pt-0">
+      <main className={`flex-1 min-h-screen ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-56'} transition-all duration-300 pt-14 lg:pt-0 relative z-10`}>
         <div className="min-h-screen">{children}</div>
       </main>
       <GlobalChatbot />

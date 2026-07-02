@@ -121,16 +121,6 @@ function Hero() {
               Explore Events
             </Link>
           </div>
-
-          {/* Trust strip */}
-          <div className="flex flex-wrap gap-5 text-sm text-text-3">
-            {['No credit card', 'Free forever plan', 'AI included', 'SOC 2 compliant'].map(t => (
-              <span key={t} className="flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5 text-success shrink-0" />
-                {t}
-              </span>
-            ))}
-          </div>
         </div>
 
         {/* Right — product preview card */}
@@ -1088,10 +1078,8 @@ export default function LandingPage() {
       <MeetupsSection />
       <AISection />
       <DashboardPreview />
-      <Testimonials />
       <FAQ />
       <CTABand />
-      <Footer />
     </div>
   );
 }

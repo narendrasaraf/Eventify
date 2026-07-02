@@ -3,13 +3,6 @@ import { Calendar, Brain, Award } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
 function About() {
-  const stats = [
-    { label: 'Events Hosted', value: '15,000+' },
-    { label: 'Active Communities', value: '800+' },
-    { label: 'Tickets Issued', value: '120k+' },
-    { label: 'AI Operations Run', value: '50k+' }
-  ];
-
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 w-full space-y-16">
 
@@ -19,9 +12,9 @@ function About() {
         className="text-center max-w-3xl mx-auto"
       />
 
-      {/* Grid of details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto px-4 items-center">
-        <div className="space-y-6">
+      {/* Centered details block */}
+      <div className="max-w-3xl mx-auto px-4">
+        <div className="space-y-6 text-center">
           <h2 className="text-3xl font-black text-white leading-tight">An AI-First Platform for Modern Communities</h2>
           <p className="text-slate-400 text-base leading-relaxed font-medium">
             Eventify was founded with a single mission: to eliminate the friction in event management. 
@@ -33,14 +26,6 @@ function About() {
             our platform optimizes schedules, tracks registrations, and generates real-time business insights 
             using the Gemini AI gateway.
           </p>
-        </div>
-        <div className="grid grid-cols-2 gap-6">
-          {stats.map((stat) => (
-            <div key={stat.label} className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 p-8 rounded-3xl text-center group hover:border-indigo-500/20 transition-all duration-300">
-              <div className="text-3xl font-black text-indigo-400 mb-2">{stat.value}</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{stat.label}</div>
-            </div>
-          ))}
         </div>
       </div>
 

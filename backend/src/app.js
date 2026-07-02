@@ -72,7 +72,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: config.isProd,
-      sameSite: config.isProd ? 'strict' : 'lax',
+      sameSite: config.isProd ? 'none' : 'lax',
       maxAge: 10 * 60 * 1000, // 10 minutes — only needed during OAuth handshake
     },
   })

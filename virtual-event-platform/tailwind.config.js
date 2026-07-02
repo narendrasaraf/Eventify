@@ -4,24 +4,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Core brand
+        // Premium brand
         brand: '#6366f1',
         'brand-dark': '#4f46e5',
-        // Neutral canvas
-        canvas: '#0a0a0f',
-        surface: '#111118',
-        'surface-2': '#1a1a24',
-        'surface-3': '#22222f',
-        border: '#2a2a3a',
-        'border-strong': '#3a3a4a',
-        // Text
-        'text-1': '#f4f4f8',
-        'text-2': '#9090a8',
-        'text-3': '#5a5a70',
+        // Obsidian Canvas & Surfaces
+        canvas: '#030307',
+        surface: '#0a0a0f',
+        'surface-2': '#12121c',
+        'surface-3': '#1b1b2a',
+        border: 'rgba(255, 255, 255, 0.06)',
+        'border-strong': 'rgba(255, 255, 255, 0.12)',
+        // Slate Text
+        'text-1': '#f8fafc',
+        'text-2': '#94a3b8',
+        'text-3': '#475569',
         // Semantic
-        success: '#22c55e',
+        success: '#10b981',
         warning: '#f59e0b',
-        danger: '#ef4444',
+        danger: '#f43f5e',
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],

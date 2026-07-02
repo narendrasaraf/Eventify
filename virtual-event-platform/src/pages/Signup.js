@@ -51,28 +51,13 @@ export default function Signup() {
           <span className="font-display font-bold text-text-1">Eventify</span>
         </Link>
 
-        <div className="relative z-10 space-y-6">
-          <div>
-            <div className="font-display text-3xl font-bold text-text-1 mb-3">Join 250,000+ event professionals</div>
-            <p className="text-text-2 leading-relaxed">
-              Create, manage, and discover world-class events with the power of AI — completely free to start.
-            </p>
-          </div>
-          <div className="space-y-3">
-            {[
-              'AI-powered event creation in seconds',
-              'Smart attendee recommendations',
-              'Real-time analytics & insights',
-              'Global event discovery',
-            ].map(f => (
-              <div key={f} className="flex items-center gap-2.5 text-sm text-text-2">
-                <div className="w-5 h-5 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center shrink-0">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand" />
-                </div>
-                {f}
-              </div>
-            ))}
-          </div>
+        <div className="relative z-10">
+          <h2 className="text-2xl font-display font-bold text-text-1 leading-tight mb-3">
+            Get started with Eventify
+          </h2>
+          <p className="text-sm text-text-2 leading-relaxed">
+            Create an account to host events, manage RSVPs, collaborate with AI, and grow your local communities.
+          </p>
         </div>
 
         <p className="text-xs text-text-3 relative z-10">© 2025 Eventify. All rights reserved.</p>
@@ -154,7 +139,7 @@ export default function Signup() {
           </div>
 
           <button
-            onClick={() => { window.location.href = 'http://localhost:5000/auth/google'; }}
+            onClick={() => { window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/google`; }}
             className="btn-secondary btn-lg w-full"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

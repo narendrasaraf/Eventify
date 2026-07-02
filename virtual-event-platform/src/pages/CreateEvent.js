@@ -190,8 +190,8 @@ function CreateEvent() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="section-container pt-12 max-w-4xl">
+    <div className="min-h-screen bg-canvas pb-20">
+      <div className="section-container pt-12 max-w-4xl mx-auto px-6">
         <PageHeader
           title="Host with Intelligence"
           subtitle="Describe your event details, schedule, or pricing in plain text and let AI compile the configuration canvas."
@@ -203,7 +203,7 @@ function CreateEvent() {
             type="button"
             onClick={() => setCreationMode('ai')}
             className={`flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${creationMode === 'ai'
-              ? 'bg-primary text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]'
+              ? 'bg-brand text-white shadow-md shadow-brand/25'
               : 'text-slate-500 hover:text-slate-300'
             }`}
           >
@@ -213,7 +213,7 @@ function CreateEvent() {
             type="button"
             onClick={() => setCreationMode('manual')}
             className={`flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${creationMode === 'manual'
-              ? 'bg-primary text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]'
+              ? 'bg-brand text-white shadow-md shadow-brand/25'
               : 'text-slate-500 hover:text-slate-300'
             }`}
           >
@@ -230,7 +230,7 @@ function CreateEvent() {
               <textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                className="input-field w-full min-h-[160px] py-4 text-base placeholder-slate-600 focus:ring-2 focus:ring-primary/50"
+                className="input-field w-full min-h-[160px] py-4 text-base placeholder-slate-600 focus:ring-2 focus:ring-brand/30 focus:border-brand/50"
                 placeholder="Describe your event name, description, category, starting date and time, venue address or platform, ticket type (free/paid), price, and seat limit..."
               />
 
@@ -240,7 +240,7 @@ function CreateEvent() {
                   type="button"
                   onClick={handleAiDraft}
                   disabled={isGenerating}
-                  className="btn-primary flex items-center gap-2 px-8 py-3.5 text-base font-bold shadow-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all"
+                  className="btn-primary flex items-center gap-2 px-8 py-3.5 text-base font-bold shadow-lg shadow-brand/20 hover:scale-[1.03] active:scale-95 transition-all"
                 >
                   {isGenerating ? (
                     <><Loader2 className="h-5 w-5 animate-spin" /> Drafting Event...</>

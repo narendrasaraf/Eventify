@@ -69,24 +69,30 @@ function SideSection({ label, collapsed }) {
 }
 
 // ── MAIN SIDEBAR ─────────────────────────────────────────
-export default function Sidebar({ user, onLogout }) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function Sidebar({ user, onLogout, collapsed: propCollapsed, onToggleCollapsed }) {
+  const [localCollapsed, setLocalCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+
+  const collapsed = propCollapsed !== undefined ? propCollapsed : localCollapsed;
+  const toggleCollapsed = () => {
+    if (onToggleCollapsed) {
+      onToggleCollapsed();
+    } else {
+      setLocalCollapsed(!localCollapsed);
+    }
+  };
 
   // Close mobile sidebar on route change
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
-
-
   const content = (
     <nav className="flex flex-col h-full py-4 gap-0.5">
-      {/* Logo + toggle */}
       {/* Logo + toggle */}
       <div className={`flex items-center mb-6 px-3 ${collapsed ? 'flex-col gap-3 justify-center' : 'justify-between'}`}>
         <Logo collapsed={collapsed} />
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={toggleCollapsed}
           className="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg text-text-3 hover:text-text-2 hover:bg-surface-2 transition-all shrink-0"
           title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
