@@ -23,6 +23,9 @@ import UserDashboard from './pages/UserDashboard';
 import Pricing from './pages/Pricing';
 import About from './pages/About';
 import Community from './pages/Community';
+import ClubHome from './pages/ClubHome';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 import Analytics from './pages/Analytics';
 import Notifications from './pages/Notifications';
 
@@ -36,6 +39,14 @@ axios.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const hasUserSession = localStorage.getItem('user');
+
+    // Immediate block invalidation check
+    if (error.response?.status === 403 && (error.response?.data?.message?.toLowerCase().includes("blocked") || error.response?.data?.errorCode === 'ACCOUNT_BLOCKED')) {
+      localStorage.removeItem('user');
+      alert("Your account has been blocked by the administrator.");
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
 
     // Only attempt to refresh tokens if user session is expected to exist,
     // avoiding infinite redirect/refresh loops for guest users.
@@ -89,8 +100,13 @@ function App() {
           <Route path="/tickets" element={<ProtectedRoute><MyEvents /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+          <Route path="/community/club/:id" element={<ProtectedRoute><ClubHome /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+
+          {/* Admin routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
           {/* Legacy fallback */}
           <Route path="*" element={<Navigate to="/discover" replace />} />

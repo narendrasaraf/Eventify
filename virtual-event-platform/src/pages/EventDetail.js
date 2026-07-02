@@ -76,26 +76,35 @@ function EventDetail({ event: propEvent }) {
   const [loading, setLoading] = useState(false);
   const [meeting, setMeeting] = useState(null);
   const [activeMeeting, setActiveMeeting] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [booking, setBooking] = useState(null);
+  const [paymentFailed, setPaymentFailed] = useState(false);
+
   const user = React.useMemo(() => {
     try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
   }, []);
 
+  const isOrganizer = React.useMemo(() => {
+    if (!event || !user) return false;
+    const organizerId = event.createdBy?._id || event.createdBy || event.organizerId;
+    const userId = user._id || user.id;
+    return organizerId && userId && organizerId.toString() === userId.toString();
+  }, [event, user]);
+
+  const refreshBooking = async () => {
+    if (!event || !user) return;
+    try {
+      const res = await axios.get('http://localhost:5000/api/v1/bookings', { withCredentials: true });
+      const bookings = Array.isArray(res.data) ? res.data : res.data.data?.bookings || [];
+      const userBooking = bookings.find(b => b.eventId && (b.eventId._id || b.eventId.id) === event._id);
+      setBooking(userBooking || null);
+    } catch (err) {
+      console.error("Failed to fetch user bookings list:", err);
+    }
+  };
+
   // Check if current user is already registered for this event
   useEffect(() => {
-    if (event && user) {
-      const checkBooking = async () => {
-        try {
-          const res = await axios.get('http://localhost:5000/api/v1/bookings', { withCredentials: true });
-          const bookings = Array.isArray(res.data) ? res.data : res.data.data?.bookings || [];
-          const isBooked = bookings.some(b => b.eventId && (b.eventId._id || b.eventId.id) === event._id);
-          setIsRegistered(isBooked);
-        } catch (err) {
-          console.error("Failed to fetch user bookings list:", err);
-        }
-      };
-      checkBooking();
-    }
+    refreshBooking();
   }, [event, user]);
 
   // Load Jitsi external API script dynamically
@@ -111,10 +120,12 @@ function EventDetail({ event: propEvent }) {
 
   // Fetch meeting details if Jitsi configurations exist
   useEffect(() => {
-    if (event && (event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi' && user) {
+    const isPaid = isOrganizer || (booking && booking.paymentStatus === 'PAID');
+    if (isPaid && event && (event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi' && user) {
       const fetchMeeting = async () => {
         try {
-          const res = await axios.get(`http://localhost:5000/api/v1/meetings/event/${event._id}`, { withCredentials: true });
+          const endpoint = isOrganizer ? 'launch' : 'join';
+          const res = await axios.get(`http://localhost:5000/api/v1/meetings/${endpoint}/${event._id}`, { withCredentials: true });
           if (res.data && res.data.data?.meeting) {
             setMeeting(res.data.data.meeting);
           }
@@ -124,7 +135,7 @@ function EventDetail({ event: propEvent }) {
       };
       fetchMeeting();
     }
-  }, [event, user, isRegistered]);
+  }, [event, user, booking, isOrganizer]);
 
   // Handle Jitsi iframe API lifecycle
   useEffect(() => {
@@ -225,34 +236,67 @@ function EventDetail({ event: propEvent }) {
     );
   }
 
-  const handleJoinMeet = () => {
-    const link = event.meetingLink || event.googleMapLink;
+  const handleRegister = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post('http://localhost:5000/api/book', { eventId: event._id }, { withCredentials: true });
+      if (res.status === 201 || res.status === 200) {
+        toast.success("Registration Successful");
+        
+        // Refresh booking state
+        const bookingsRes = await axios.get('http://localhost:5000/api/v1/bookings', { withCredentials: true });
+        const bookings = Array.isArray(bookingsRes.data) ? bookingsRes.data : bookingsRes.data.data?.bookings || [];
+        const userBooking = bookings.find(b => b.eventId && (b.eventId._id || b.eventId.id) === event._id);
+        setBooking(userBooking || null);
 
-    if (link && link.startsWith('http')) {
-      window.open(link, '_blank');
-    } else {
-      toast.error("Meeting link is not available for this event.");
+        if (event.ticketType === 'Paid' && event.ticketPrice > 0) {
+          toast.info("Redirecting to Payment...");
+          await handlePaymentFlow(userBooking || null);
+        } else {
+          toast.info("Confirming Free Booking...");
+          await handleFreeBookingConfirm();
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to register. Please login first.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFreeBookingConfirm = async () => {
+    setLoading(true);
+    try {
+      const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
+        eventId: event._id
+      }, { withCredentials: true });
+
+      if (verifyRes.status === 200) {
+        toast.success("Payment Successful");
+        toast.success("Booking Confirmed");
+        await refreshBooking();
+        toast.success("Meeting Ready");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment verification failed. Please contact support.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePayment = async () => {
-    if (event.ticketType === 'Free' || !event.ticketPrice || event.ticketPrice === 0) {
-      // Direct booking for free events
-      try {
-        const res = await axios.post('http://localhost:5000/api/book', { eventId: event._id }, { withCredentials: true });
-        if (res.status === 201) {
-          toast.success("Successfully registered for the event!");
-          setIsRegistered(true);
-          navigate('/tickets');
-        }
-      } catch (err) {
-        toast.error("Failed to register. Please login first.");
-      }
+    if (!booking) {
+      toast.error("Please register first.");
       return;
     }
+    await handlePaymentFlow(booking);
+  };
 
-    // Paid event flow
+  const handlePaymentFlow = async (currentBooking) => {
     setLoading(true);
+    setPaymentFailed(false);
     try {
       const orderRes = await axios.post('http://localhost:5000/api/payment/create-order', {
         amount: event.ticketPrice
@@ -267,26 +311,38 @@ function EventDetail({ event: propEvent }) {
         );
         if (upiId === null) {
           toast.error("Sandbox: Payment cancelled by user.");
+          setPaymentFailed(true);
           return;
         }
         if (upiId.toLowerCase().includes("fail")) {
           toast.error("Sandbox: UPI transaction simulation failed.");
+          setPaymentFailed(true);
           return;
         }
 
-        const mockPaymentId = `pay_mock_${Date.now()}`;
-        const mockSignature = `sig_mock_${Date.now()}`;
-        const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
-          razorpay_order_id: orderRes.data.id,
-          razorpay_payment_id: mockPaymentId,
-          razorpay_signature: mockSignature,
-          eventId: event._id
-        }, { withCredentials: true });
+        setLoading(true);
+        try {
+          const mockPaymentId = `pay_mock_${Date.now()}`;
+          const mockSignature = `sig_mock_${Date.now()}`;
+          const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
+            razorpay_order_id: orderRes.data.id,
+            razorpay_payment_id: mockPaymentId,
+            razorpay_signature: mockSignature,
+            eventId: event._id
+          }, { withCredentials: true });
 
-        if (verifyRes.status === 200) {
-          toast.success("Sandbox: UPI Payment Successful! Event Booked.");
-          setIsRegistered(true);
-          navigate('/tickets');
+          if (verifyRes.status === 200) {
+            toast.success("Payment Successful");
+            toast.success("Booking Confirmed");
+            await refreshBooking();
+            toast.success("Meeting Ready");
+          }
+        } catch (err) {
+          console.error("Payment verification failed details:", err.response?.data || err);
+          toast.error("Payment verification failed. Please contact support.");
+          setPaymentFailed(true);
+        } finally {
+          setLoading(false);
         }
         return;
       }
@@ -299,6 +355,7 @@ function EventDetail({ event: propEvent }) {
         description: `Payment for ${event.eventName}`,
         order_id: orderRes.data.id,
         handler: async function (response) {
+          setLoading(true);
           try {
             const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', {
               razorpay_order_id: response.razorpay_order_id,
@@ -308,13 +365,23 @@ function EventDetail({ event: propEvent }) {
             }, { withCredentials: true });
 
             if (verifyRes.status === 200) {
-              toast.success("Payment Successful! Event Booked.");
-              setIsRegistered(true);
-              navigate('/tickets');
+              toast.success("Payment Successful");
+              toast.success("Booking Confirmed");
+              await refreshBooking();
+              toast.success("Meeting Ready");
             }
           } catch (err) {
             console.error("Payment verification failed details:", err.response?.data || err);
-            toast.error(err.response?.data?.message || "Payment verification failed.");
+            toast.error("Payment verification failed. Please contact support.");
+            setPaymentFailed(true);
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setPaymentFailed(true);
+            setLoading(false);
           }
         },
         prefill: {
@@ -352,14 +419,48 @@ function EventDetail({ event: propEvent }) {
         rzp.open();
       } else {
         toast.error("Payment gateway not loaded.");
+        setPaymentFailed(true);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Payment initiation failed details:", err.response?.data || err);
       toast.error(err.response?.data?.message || "Failed to initiate payment.");
+      setPaymentFailed(true);
+      setLoading(false);
+    }
+  };
+
+  const handleLaunchOrJoinMeeting = async (isLaunch) => {
+    setLoading(true);
+    try {
+      const endpoint = isLaunch ? 'launch' : 'join';
+      const res = await axios.get(`http://localhost:5000/api/v1/meetings/${endpoint}/${event._id}`, { withCredentials: true });
+      const meetingData = res.data.data?.meeting;
+      if (meetingData) {
+        setMeeting(meetingData);
+        toast.success("Meeting Ready");
+        if (event.meetingPlatform === 'Jitsi') {
+          setActiveMeeting(true);
+        } else {
+          const link = meetingData.roomUrl || event.meetingLink || event.googleMapLink;
+          if (link && link.startsWith('http')) {
+            window.open(link, '_blank');
+          } else {
+            toast.error("Meeting link is not available.");
+          }
+        }
+      } else {
+        toast.error("Failed to load meeting details.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to join/launch meeting.");
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
@@ -404,6 +505,14 @@ function EventDetail({ event: propEvent }) {
   const formattedTime = event.startDate
     ? new Date(event.startDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
     : event.time;
+
+  const now = new Date();
+  const startDate = new Date(event.startDate || event.date);
+  const endDate = new Date(event.endDate || (new Date(event.startDate || event.date).getTime() + 2 * 60 * 60 * 1000));
+  
+  const isBeforeEvent = now < startDate;
+  const isAfterEvent = now > endDate;
+  const isEventActive = now >= startDate && now <= endDate;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
@@ -526,7 +635,7 @@ function EventDetail({ event: propEvent }) {
             </div>
 
             {/* Virtual Workspace (Jitsi Meet) */}
-            {(event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi' && (
+            {(isOrganizer || (booking && booking.paymentStatus === 'PAID')) && (event.mode === 'Online' || event.mode === 'Hybrid') && event.meetingPlatform === 'Jitsi' && (
               <div className="border-t border-slate-800 pt-6">
                 {meeting ? (
                   <div className="space-y-4">
@@ -573,57 +682,116 @@ function EventDetail({ event: propEvent }) {
             )}
 
             <div className="border-t border-slate-800 pt-8 space-y-6">
-              <div className="text-center">
-                <p className="text-text-secondary text-sm mb-1 uppercase tracking-tighter">Ticket Price</p>
-                <p className="text-4xl font-black text-text-primary">
-                  {event.ticketType === 'Free' ? 'FREE' : `₹${event.ticketPrice}`}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {isRegistered ? (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl text-center space-y-2">
-                      <BadgeCheck className="h-10 w-10 text-emerald-400 mx-auto animate-bounce mt-2" />
-                      <h5 className="font-extrabold text-white text-base">You're Registered!</h5>
-                      <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                        Your admission pass is secured. You can view or download your ticket in your Tickets Wallet.
-                      </p>
-                    </div>
+              {isOrganizer ? (
+                /* State 0: User is Organizer */
+                <div className="space-y-4">
+                  {isAfterEvent ? (
                     <button
-                      onClick={() => navigate('/tickets')}
-                      className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+                      disabled
+                      className="w-full bg-slate-800 text-slate-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-not-allowed text-sm"
                     >
-                      <Ticket className="h-5 w-5" /> Go to Tickets Wallet
+                      Event Ended
                     </button>
-                  </div>
-                ) : (
+                  ) : (
+                    <button
+                      onClick={() => handleLaunchOrJoinMeeting(true)}
+                      disabled={loading}
+                      className="w-full bg-emerald-650 hover:bg-emerald-550 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-emerald-600/20 text-sm"
+                    >
+                      {loading ? (
+                        <><Loader2 className="h-5 w-5 animate-spin" /> Launching...</>
+                      ) : (
+                        <><Video className="h-5 w-5" /> Launch Meeting (Organizer)</>
+                      )}
+                    </button>
+                  )}
+                </div>
+              ) : booking === null ? (
+                /* State 1: No booking exists - show only Register button */
+                <div className="space-y-3">
                   <button
-                    className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                    onClick={handlePayment}
+                    onClick={handleRegister}
                     disabled={loading}
+                    className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                   >
                     {loading ? (
-                      <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
+                      <><Loader2 className="h-5 w-5 animate-spin" /> Registering...</>
                     ) : (
-                      event.ticketType === 'Free' ? 'Join Now' : 'Pay & Book Ticket'
+                      'Register'
                     )}
                   </button>
-                )}
+                </div>
+              ) : booking.paymentStatus === 'PENDING' ? (
+                /* State 2: Registered, pending payment - show Ticket Price and Pay & Book Ticket button */
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <p className="text-text-secondary text-sm mb-1 uppercase tracking-tighter">Ticket Price</p>
+                    <p className="text-4xl font-black text-text-primary">
+                      {event.ticketType === 'Free' ? 'FREE' : `₹${event.ticketPrice}`}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handlePayment}
+                      disabled={loading}
+                      className="btn-primary w-full py-4 text-base font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                    >
+                      {loading ? (
+                        <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
+                      ) : (
+                        paymentFailed ? 'Retry Payment' : 'Pay & Book Ticket'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* State 3: Paid / Confirmed - show Jitsi Join Meeting or Event Ended */
+                <div className="space-y-4">
+                  <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl text-center space-y-2">
+                    <BadgeCheck className="h-10 w-10 text-emerald-400 mx-auto animate-bounce mt-2" />
+                    <h5 className="font-extrabold text-white text-base">Booking Confirmed!</h5>
+                    <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                      Your admission pass is secured. Access credentials are ready below.
+                    </p>
+                  </div>
 
-                {event.meetingLink && (isRegistered || (user && event && ((event.createdBy?._id || event.createdBy) === user._id || (event.createdBy?._id || event.createdBy) === user.id))) && (
+                  {isAfterEvent ? (
+                    <button
+                      disabled
+                      className="w-full bg-slate-800 text-slate-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-not-allowed text-sm"
+                    >
+                      Event Ended
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleLaunchOrJoinMeeting(false)}
+                      disabled={isBeforeEvent || loading}
+                      className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${
+                        isBeforeEvent
+                          ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+                          : "bg-emerald-650 hover:bg-emerald-550 text-white shadow-lg shadow-emerald-600/20"
+                      }`}
+                    >
+                      {loading ? (
+                        <><Loader2 className="h-5 w-5 animate-spin" /> Connecting...</>
+                      ) : (
+                        <><Video className="h-5 w-5" /> {isBeforeEvent ? "Join Meeting (Attendee) disabled until start" : "Join Meeting"}</>
+                      )}
+                    </button>
+                  )}
+
                   <button
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-                    onClick={handleJoinMeet}
+                    onClick={() => navigate('/tickets')}
+                    className="btn-secondary w-full py-3 flex items-center justify-center gap-2"
                   >
-                    <Video className="h-5 w-5" /> Launch Meeting
+                    <Ticket className="h-4 w-4" /> Go to Tickets Wallet
                   </button>
-                )}
+                </div>
+              )}
 
-                <button className="w-full btn-secondary py-3 flex items-center justify-center gap-2">
-                  <Share2 className="h-4 w-4" /> Share Event
-                </button>
-              </div>
+              <button className="w-full btn-secondary py-3 flex items-center justify-center gap-2">
+                <Share2 className="h-4 w-4" /> Share Event
+              </button>
             </div>
 
             <div className="text-center space-y-2">

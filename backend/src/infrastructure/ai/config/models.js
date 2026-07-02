@@ -8,18 +8,18 @@
 const models = {
   providers: {
     gemini: {
-      defaultModel: 'gemini-2.5-flash',
+      defaultModel: 'gemini-1.5-flash',
       models: {
-        'gemini-2.5-flash': {
-          displayName: 'Gemini 2.5 Flash',
+        'gemini-1.5-flash': {
+          displayName: 'Gemini 1.5 Flash',
           inputCostPerM: 0.075,
           outputCostPerM: 0.30,
           contextWindow: 1048576,
           maxOutputTokens: 8192,
           capabilities: ['extraction', 'chat', 'tools', 'speed'],
         },
-        'gemini-2.5-pro': {
-          displayName: 'Gemini 2.5 Pro',
+        'gemini-1.5-pro': {
+          displayName: 'Gemini 1.5 Pro',
           inputCostPerM: 1.25,
           outputCostPerM: 5.00,
           contextWindow: 2097152,
@@ -74,12 +74,12 @@ const models = {
   
   // Rule routing mapping tasks to performance tiers
   routingRules: {
-    speed: 'gemini-2.5-flash',
-    extraction: 'gemini-2.5-flash',
-    chat: 'gemini-2.5-flash',
-    tools: 'gemini-2.5-flash',
-    complex: 'gemini-2.5-pro',
-    reasoning: 'gemini-2.5-pro',
+    speed: 'gemini-1.5-flash',
+    extraction: 'gemini-1.5-flash',
+    chat: 'gemini-1.5-flash',
+    tools: 'gemini-1.5-flash',
+    complex: 'gemini-1.5-pro',
+    reasoning: 'gemini-1.5-pro',
   },
 };
 

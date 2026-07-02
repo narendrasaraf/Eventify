@@ -121,7 +121,7 @@ Ensure output conforms strictly to the specified JSON schema structure.`;
 
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         systemInstruction,
       });
 
@@ -165,7 +165,7 @@ ${eventDetailsText}`;
 
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         systemInstruction,
       });
 
@@ -232,7 +232,7 @@ Constraints: ${JSON.stringify(constraints)}`;
 
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         systemInstruction:
           'You are a conference planner bot. Resolve timing conflicts, arrange sessions sequentially, and output a structured timeline matching the schema.',
       });
@@ -274,7 +274,7 @@ ${JSON.stringify(stats, null, 2)}`;
 
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         systemInstruction,
       });
 
@@ -343,7 +343,7 @@ Answer the user's question clearly, concisely, and supportively. Use Markdown fo
 
     try {
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         systemInstruction,
       });
 

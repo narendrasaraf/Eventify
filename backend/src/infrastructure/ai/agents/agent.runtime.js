@@ -17,7 +17,7 @@ const AgentRuntime = {
    */
   run: async (userQuery, options = {}) => {
     const maxIterations = options.maxIterations || 5;
-    const model = options.model || 'gemini-2.5-flash';
+    const model = options.model || 'gemini-1.5-flash';
     
     // Build initial prompt incorporating tools schema
     const tools = ToolRegistry.getSchemas();

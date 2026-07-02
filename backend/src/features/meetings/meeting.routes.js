@@ -9,6 +9,10 @@ const { protect } = require('../../middleware/auth.middleware');
 router.use(protect);
 
 router.get('/event/:eventId', MeetingController.getMeetingForEvent);
+router.get('/join/:eventId',  MeetingController.joinMeeting);
+router.get('/join',           MeetingController.joinMeeting);
+router.get('/launch/:eventId', MeetingController.launchMeeting);
+router.get('/launch',         MeetingController.launchMeeting);
 router.post('/',              MeetingController.createMeeting);
 router.patch('/:id',          MeetingController.updateMeeting);
 router.delete('/:id',         MeetingController.deleteMeeting);

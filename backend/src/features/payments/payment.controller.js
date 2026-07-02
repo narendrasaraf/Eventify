@@ -87,51 +87,61 @@ const verifyPayment = asyncHandler(async (req, res) => {
     throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
   }
 
-  let isValid = false;
+  // Check if booking exists
+  const booking = await Booking.findOne({ userId: req.user.id, eventId });
+  if (!booking) {
+    throw new AppError('No registration found for this event. Please register first.', 404, 'BOOKING_NOT_FOUND');
+  }
 
-  // If Razorpay client is enabled, verify signature
-  if (rzp && !razorpay_order_id.startsWith('order_mock_')) {
-    const text = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const generated = crypto
-      .createHmac('sha256', config.razorpay.keySecret)
-      .update(text)
-      .digest('hex');
+  const isFree = event.ticketType === 'Free' || !event.ticketPrice || event.ticketPrice === 0;
 
-    isValid = generated === razorpay_signature;
+  if (!isFree) {
+    if (!razorpay_order_id || !razorpay_payment_id) {
+      throw new AppError('Payment details and eventId are required', 422, 'PAYMENT_DETAILS_REQUIRED');
+    }
+
+    let isValid = false;
+
+    // If Razorpay client is enabled, verify signature
+    if (rzp && !razorpay_order_id.startsWith('order_mock_')) {
+      const text = `${razorpay_order_id}|${razorpay_payment_id}`;
+      const generated = crypto
+        .createHmac('sha256', config.razorpay.keySecret)
+        .update(text)
+        .digest('hex');
+
+      isValid = generated === razorpay_signature;
+
+      if (!isValid) {
+        logger.warn(`Signature mismatch: expected ${generated}, got ${razorpay_signature}.`);
+        if (config.razorpay.keyId && config.razorpay.keyId.startsWith('rzp_test_')) {
+          logger.info(`Bypassing signature mismatch because server is running in Razorpay TEST mode.`);
+          isValid = true;
+        }
+      }
+    } else {
+      // In Mock Mode, allow any order that has our mock prefix
+      isValid = razorpay_order_id.startsWith('order_mock_') || !rzp;
+    }
 
     if (!isValid) {
-      logger.warn(`Signature mismatch: expected ${generated}, got ${razorpay_signature}.`);
-      if (config.razorpay.keyId && config.razorpay.keyId.startsWith('rzp_test_')) {
-        logger.info(`Bypassing signature mismatch because server is running in Razorpay TEST mode.`);
-        isValid = true;
-      }
+      throw new AppError('Payment signature verification failed', 400, 'PAYMENT_VERIFICATION_FAILED');
     }
-  } else {
-    // In Mock Mode, allow any order that has our mock prefix
-    isValid = razorpay_order_id.startsWith('order_mock_') || !rzp;
   }
 
-  if (!isValid) {
-    throw new AppError('Payment signature verification failed', 400, 'PAYMENT_VERIFICATION_FAILED');
-  }
+  // Update the booking entry
+  booking.amountPaid = isFree ? 0 : event.ticketPrice;
+  booking.paymentId = isFree ? `free_pay_${Date.now()}` : razorpay_payment_id;
+  booking.paymentOrderId = isFree ? `free_order_${Date.now()}` : razorpay_order_id;
+  booking.orderId = isFree ? `free_order_${Date.now()}` : razorpay_order_id;
+  booking.signature = isFree ? `free_sig_${Date.now()}` : (razorpay_signature || '');
+  booking.paymentStatus = 'PAID';
+  booking.bookingStatus = 'CONFIRMED';
+  booking.status = 'Confirmed';
 
-  // Check duplicate booking
-  const existing = await Booking.findOne({ userId: req.user.id, eventId });
-  if (existing && existing.status !== 'Cancelled') {
-    throw new AppError('You are already registered for this event', 409, 'ALREADY_BOOKED');
-  }
+  await booking.save();
 
-  // Create the booking entry
-  const booking = await Booking.create({
-    userId: req.user.id,
-    eventId,
-    amountPaid: event.ticketPrice,
-    paymentId: razorpay_payment_id,
-    paymentOrderId: razorpay_order_id,
-    status: 'Confirmed',
-  });
-
-  logger.info(`Paid booking confirmed: user ${req.user.id} event ${eventId} order ${razorpay_order_id}`);
+  logger.info(`Paid booking confirmed: user ${req.user.id} event ${eventId} order ${booking.paymentOrderId}`);
 
   // Auto-create notification for paid booking
   try {
@@ -139,7 +149,7 @@ const verifyPayment = asyncHandler(async (req, res) => {
     await Notification.create({
       userId: req.user.id,
       title: 'Booking Confirmed',
-      body: `Your ticket for "${event.eventName}" has been issued successfully. Access code: ${booking.ticketNumber || 'TKT-' + razorpay_payment_id.substr(-6).toUpperCase()}.`,
+      body: `Your ticket for "${event.eventName}" has been issued successfully. Access code: ${booking.ticketNumber || 'TKT-' + booking.paymentId.substr(-6).toUpperCase()}.`,
       type: 'success',
     });
   } catch (nErr) {

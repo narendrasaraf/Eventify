@@ -112,8 +112,46 @@ export default function Sidebar({ user, onLogout }) {
           <>
             <SideSection label="Manage" collapsed={collapsed} />
             <SidebarItem to="/tickets"   label="Tickets"   icon={Ticket}   collapsed={collapsed} />
-            <SidebarItem to="/community" label="Community" icon={Globe}     collapsed={collapsed} />
+            
+            {/* Community Section */}
+            <SidebarItem to="/community" label="Community" icon={Globe} collapsed={collapsed} />
+            {!collapsed && (
+              <div className="pl-6 flex flex-col gap-0.5 text-xs text-text-2 my-1">
+                <NavLink 
+                  to="/community?tab=discover" 
+                  className={({ isActive }) => `px-3 py-1 rounded-lg hover:bg-surface-2 hover:text-white transition-all ${isActive && location.search.includes('discover') ? 'text-indigo-400 font-bold bg-indigo-500/10' : ''}`}
+                >
+                  Discover Clubs
+                </NavLink>
+                <NavLink 
+                  to="/community?tab=my-clubs" 
+                  className={({ isActive }) => `px-3 py-1 rounded-lg hover:bg-surface-2 hover:text-white transition-all ${isActive && location.search.includes('my-clubs') ? 'text-indigo-400 font-bold bg-indigo-500/10' : ''}`}
+                >
+                  My Clubs
+                </NavLink>
+                <NavLink 
+                  to="/community?tab=discussions" 
+                  className={({ isActive }) => `px-3 py-1 rounded-lg hover:bg-surface-2 hover:text-white transition-all ${isActive && location.search.includes('discussions') ? 'text-indigo-400 font-bold bg-indigo-500/10' : ''}`}
+                >
+                  Discussions
+                </NavLink>
+                <NavLink 
+                  to="/community?tab=resources" 
+                  className={({ isActive }) => `px-3 py-1 rounded-lg hover:bg-surface-2 hover:text-white transition-all ${isActive && location.search.includes('resources') ? 'text-indigo-400 font-bold bg-indigo-500/10' : ''}`}
+                >
+                  Resources
+                </NavLink>
+              </div>
+            )}
+
             <SidebarItem to="/analytics" label="Analytics" icon={BarChart2} collapsed={collapsed} />
+          </>
+        )}
+
+        {user && (user.role === 'admin' || user.role === 'ADMIN') && (
+          <>
+            <SideSection label="Admin Panel" collapsed={collapsed} />
+            <SidebarItem to="/admin/dashboard" label="Admin Console" icon={LayoutDashboard} collapsed={collapsed} />
           </>
         )}
       </div>
