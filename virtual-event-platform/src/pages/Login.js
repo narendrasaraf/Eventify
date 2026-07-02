@@ -55,17 +55,12 @@ export default function Login() {
         </Link>
 
         <div className="relative z-10">
-          <blockquote className="text-2xl font-display font-bold text-text-1 leading-tight mb-6">
-            "The future of event management is intelligent,{' '}
-            <span className="ai-glow-text">not manual."</span>
-          </blockquote>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center text-brand font-bold text-sm">A</div>
-            <div>
-              <div className="text-sm font-semibold text-text-1">Aarav Sharma</div>
-              <div className="text-xs text-text-2">Event Organizer, TechLeaders</div>
-            </div>
-          </div>
+          <h2 className="text-2xl font-display font-bold text-text-1 leading-tight mb-3">
+            Welcome back to Eventify
+          </h2>
+          <p className="text-sm text-text-2 leading-relaxed">
+            Log in to manage your events, connect with your community, and access real-time event analytics.
+          </p>
         </div>
 
         <p className="text-xs text-text-3 relative z-10">© 2025 Eventify. All rights reserved.</p>
@@ -139,7 +134,7 @@ export default function Login() {
 
           {/* Google */}
           <button
-            onClick={() => { window.location.href = 'http://localhost:5000/auth/google'; }}
+            onClick={() => { window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/google`; }}
             className="btn-secondary btn-lg w-full"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

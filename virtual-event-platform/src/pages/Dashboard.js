@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { toast } from 'react-toastify';
+import FormattedMarkdown from '../components/FormattedMarkdown';
 
 // ── STAT CARD ─────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, trend, color }) {
@@ -104,7 +105,7 @@ function AIInsightPanel() {
           >
             <X className="w-3.5 h-3.5" />
           </button>
-          {result}
+          <FormattedMarkdown text={result} />
         </div>
       )}
     </div>

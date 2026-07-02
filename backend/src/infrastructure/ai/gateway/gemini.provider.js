@@ -16,7 +16,7 @@ class GeminiProvider extends BaseProvider {
   }
 
   async generateText(prompt, options = {}) {
-    const modelName = options.model || 'gemini-1.5-flash';
+    const modelName = options.model || 'gemini-2.5-flash';
     logger.debug(`GeminiProvider executing generateText with model: ${modelName}`);
 
     try {
@@ -51,7 +51,7 @@ class GeminiProvider extends BaseProvider {
   }
 
   async generateStructuredJSON(prompt, schema, options = {}) {
-    const modelName = options.model || 'gemini-1.5-flash';
+    const modelName = options.model || 'gemini-2.5-flash';
     logger.debug(`GeminiProvider executing generateStructuredJSON with model: ${modelName}`);
 
     try {
