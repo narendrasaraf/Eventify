@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./backend/.env
+    volume:
+      - backend: /app/temp
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:5000:5000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - backend
+    volume:
+      - frontend: /app/temp
+  db:
+    image: mongodb:latest
+    ports:
+      - "127.0.0.1:27017:27017"
+    volume:
+      - mongo-data: /app/temp
+
+
+volumes:
+  mongo-data:
+  backend:
+  frontend:
